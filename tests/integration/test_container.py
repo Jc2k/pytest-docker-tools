@@ -1,8 +1,12 @@
 from pytest_docker_tools import container_fixture
 
-mycontainer = container_fixture('test', 'redis')
+container_fixture('test', 'redis')
 
 
 def test_container_created(docker_client, mycontainer):
-    print(mycontainer)
-    assert False
+    for container in docker_client.containers.list():
+        if container.id == mycontainer['container'].id:
+            # Looks like we managed to start one!
+            break
+    else:
+        assert False, 'Looks like we failed to start a container'
