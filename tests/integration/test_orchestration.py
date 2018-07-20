@@ -19,6 +19,7 @@ factories.container(
 factories.container(
     'mycontainer',
     image=factories.image('foobar', 'tests/integration'),
+    network=factories.network('mynetwork'),
     volumes={
         factories.volume('myvolume'): {'bind': '/var/tmp'},
     },
@@ -46,6 +47,22 @@ def test_gets_related_container_ip(redis0, mycontainer):
 
 def test_gets_volume(myvolume, mycontainer):
     ''' The container should have a volume configured pointing at our fixturized volume '''
+    for mount in mycontainer['container'].attrs['Mounts']:
+        if mount['Name'] == myvolume.name:
+            break
+    else:
+        assert False, 'Could not find attached volume'
+
+
+def test_gets_network(mynetwork, mycontainer):
+    ''' The container should be attached to our fixturized network '''
+
+    print (mycontainer['container'].attrs)
+    print (mycontainer['container'].attrs.keys())
+    print (mycontainer['container'].attrs['Config'])
+
+    assert False
+
     for mount in mycontainer['container'].attrs['Mounts']:
         if mount['Name'] == myvolume.name:
             break

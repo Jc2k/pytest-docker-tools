@@ -10,6 +10,7 @@ def create_container(request, docker_client, *args, **kwargs):
     request.addfinalizer(lambda: container.remove(force=True))
 
     while not container.attrs['NetworkSettings']['IPAddress']:
+        #print(container.attrs['NetworkSettings'])
         container.reload()
 
     container_ip = container.attrs['NetworkSettings']['IPAddress']
@@ -25,6 +26,12 @@ def _process_image(request, image):
     if hasattr(image, '_pytestfixturefunction'):
         return request.getfixturevalue(image._pytestfixturefunction.name).id
     return image
+
+
+def _process_network(request, network):
+    if hasattr(network, '_pytestfixturefunction'):
+        return request.getfixturevalue(network._pytestfixturefunction.name).id
+    return network
 
 
 def _process_volumes(request, volumes):
@@ -59,6 +66,9 @@ def container(name, image, *, scope='function', **kwargs):
 
     def container(request, docker_client):
         local_kwargs = dict(kwargs)
+
+        if 'network' in local_kwargs:
+            local_kwargs['network'] = _process_network(request, local_kwargs.pop('network'))
 
         environment = _process_environment(request, local_kwargs.pop('environment', {}))
         volumes = _process_volumes(request, local_kwargs.pop('volumes', {}))
