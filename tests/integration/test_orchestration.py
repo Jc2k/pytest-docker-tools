@@ -7,7 +7,6 @@ right order.
 
 from pytest_docker_tools import factories
 
-
 factories.container(
     'redis0',
     image='redis',
@@ -57,14 +56,4 @@ def test_gets_volume(myvolume, mycontainer):
 def test_gets_network(mynetwork, mycontainer):
     ''' The container should be attached to our fixturized network '''
 
-    print (mycontainer['container'].attrs)
-    print (mycontainer['container'].attrs.keys())
-    print (mycontainer['container'].attrs['Config'])
-
-    assert False
-
-    for mount in mycontainer['container'].attrs['Mounts']:
-        if mount['Name'] == myvolume.name:
-            break
-    else:
-        assert False, 'Could not find attached volume'
+    assert mynetwork.name in mycontainer['container'].attrs['NetworkSettings']['Networks']

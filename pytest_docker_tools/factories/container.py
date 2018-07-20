@@ -3,17 +3,28 @@ import inspect
 import pytest
 
 
+def get_addresses(container):
+    networks = container.attrs['NetworkSettings']['Networks']
+    addresses = {}
+    for name, network in networks.items():
+        if not network['IPAddress']:
+            return {}
+        addresses[name] = network['IPAddress']
+    return addresses
+
+
 def create_container(request, docker_client, *args, **kwargs):
     kwargs.update({'detach': True})
 
     container = docker_client.containers.run(*args, **kwargs)
     request.addfinalizer(lambda: container.remove(force=True))
 
-    while not container.attrs['NetworkSettings']['IPAddress']:
-        #print(container.attrs['NetworkSettings'])
+    ips = get_addresses(container)
+    while not ips:
         container.reload()
+        ips = get_addresses(container)
 
-    container_ip = container.attrs['NetworkSettings']['IPAddress']
+    container_ip = next(iter(ips.values()))
 
     return {
         'container': container,
