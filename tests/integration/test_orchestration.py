@@ -5,10 +5,10 @@ on another container, and so on, then all the contains should be built in the
 right order.
 '''
 
-from pytest_docker_tools import container_fixture, image_fixture, volume_fixture
+from pytest_docker_tools import factories
 
 
-container_fixture(
+factories.container(
     'redis0',
     image='redis',
     environment={
@@ -16,11 +16,11 @@ container_fixture(
     }
 )
 
-container_fixture(
+factories.container(
     'mycontainer',
-    image=image_fixture('foobar', 'tests/integration'),
+    image=factories.image('foobar', 'tests/integration'),
     volumes={
-        volume_fixture('myvolume'): {'bind': '/var/tmp'},
+        factories.volume('myvolume'): {'bind': '/var/tmp'},
     },
     environment={
         'REDIS_IP': lambda redis0: redis0['ip'],

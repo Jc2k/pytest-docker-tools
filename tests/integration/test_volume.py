@@ -1,6 +1,6 @@
-from pytest_docker_tools import volume_fixture
+from pytest_docker_tools import factories
 
-volume_fixture('test_volume_1')
+factories.volume('test_volume_1')
 
 
 def test_volume_created(docker_client, test_volume_1):

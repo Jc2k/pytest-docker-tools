@@ -45,7 +45,7 @@ def _process_environment(request, environment):
     return env
 
 
-def container_fixture(name, image, *, scope='function', **kwargs):
+def container(name, image, *, scope='function', **kwargs):
     '''
     Fixture factory for creating containers. For example in your conftest.py
     you can:

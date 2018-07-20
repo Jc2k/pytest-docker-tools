@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 
-def volume_fixture(name, scope='function'):
+def volume(name, scope='function'):
     '''
     Fixture factory for creating volumes. For example in your conftest.py you can:
 

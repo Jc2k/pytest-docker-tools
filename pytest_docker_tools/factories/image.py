@@ -4,7 +4,7 @@ import sys
 import pytest
 
 
-def image_fixture(name, path=None, scope='session'):
+def image(name, path=None, scope='session'):
     '''
     Fixture factory for creating container images from a Dockerfile. For example
     in your conftest.py you can:

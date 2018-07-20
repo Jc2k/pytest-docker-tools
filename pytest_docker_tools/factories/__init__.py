@@ -1,10 +1,10 @@
-from .container import container_fixture
-from .image import image_fixture
-from .volume import volume_fixture
+from .container import container
+from .image import image
+from .volume import volume
 
 
 __all__ = [
-    'container_fixture',
-    'image_fixture',
-    'volume_fixture',
+    'container',
+    'image',
+    'volume',
 ]

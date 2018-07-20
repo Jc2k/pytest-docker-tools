@@ -1,6 +1,6 @@
-from pytest_docker_tools import container_fixture
+from pytest_docker_tools import factories
 
-container_fixture('test_container_1', 'redis')
+factories.container('test_container_1', 'redis')
 
 
 def test_container_created(docker_client, test_container_1):
