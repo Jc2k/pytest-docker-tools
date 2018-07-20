@@ -3,13 +3,14 @@ import sys
 
 import pytest
 
+
 def image_fixture(name, path=None, scope='session'):
     '''
     Fixture factory for creating container images from a Dockerfile. For example
     in your conftest.py you can:
-    
+
         from pytest_docker_tools import image_fixture
-        
+
         test_image = image_fixture('test_image', path='path/to/buildcontext')
 
     Where the path is a folder containing a Dockerfile.
@@ -32,11 +33,11 @@ def image_fixture(name, path=None, scope='session'):
 
         finally:
             sys.stdout.write('\n')
-        
+
         # request.addfinalizer(lambda: docker_client.images.remove(image.id))
 
         return image
-    
+
     image.__name__ = name
     pytest.fixture(scope=scope, name=name)(image)
 

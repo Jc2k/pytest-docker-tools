@@ -1,12 +1,13 @@
 import io
 import sys
 import tarfile
+import time
 
 
 def get_files(container, path):
     '''
     Retrieve files from a container at a given path.
-    
+
     This is meant for extracting log files from a container where it is not
     using the docker logging capabilities.
     '''
@@ -51,7 +52,7 @@ def wait_for_callable(message, callable, timeout=30):
 def wait_for_port(container, port, timeout=10):
     '''
     Waits for a container to be listening on a given port.
-    
+
     The container must have netstat installed.
     '''
     def _():

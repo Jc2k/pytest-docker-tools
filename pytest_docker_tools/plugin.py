@@ -22,7 +22,7 @@ def pytest_runtest_makereport(item, call):
 
     if not rep.failed:
         return
-    
+
     for name, fixture in item.funcargs.items():
         if isinstance(fixture, dict) and 'container' in fixture:
             container = fixture['container']

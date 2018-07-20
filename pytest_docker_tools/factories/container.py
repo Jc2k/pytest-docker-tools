@@ -1,7 +1,7 @@
 import inspect
-import sys
 
 import pytest
+
 
 def create_container(request, docker_client, *args, **kwargs):
     kwargs.update({'detach': True})
@@ -49,9 +49,9 @@ def container_fixture(name, image, *, scope='function', **kwargs):
     '''
     Fixture factory for creating containers. For example in your conftest.py
     you can:
-    
+
         from pytest_docker_tools import container_fixture
-        
+
         test_container = container_fixture('test_container', 'redis')
 
     This will create a container called 'test_container' from the 'redis' image.
