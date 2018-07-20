@@ -9,13 +9,13 @@ where you are using them.
 A simple example of a container built from an image with a volume attached:
 
 ```
-from pytest_docker_tools import container_fixture, image_fixture, volume_fixture
+from pytest_docker_tools.factories import *
 
-container_fixture(
+container(
     'my_microservice',
     image('my_microservice_image', path='.'),
     volumes={
-      volume_fixture('my_microservice_data'): {'bind': '/var/tmp'},
+      volume('my_microservice_data'): {'bind': '/var/tmp'},
     }
 )
 ```
