@@ -1,11 +1,11 @@
 from pytest_docker_tools import container_fixture
 
-container_fixture('test', 'redis')
+container_fixture('test_container_1', 'redis')
 
 
-def test_container_created(docker_client, mycontainer):
+def test_container_created(docker_client, test_container_1):
     for container in docker_client.containers.list():
-        if container.id == mycontainer['container'].id:
+        if container.id == test_container_1['container'].id:
             # Looks like we managed to start one!
             break
     else:
