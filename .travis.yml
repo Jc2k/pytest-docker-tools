@@ -10,8 +10,8 @@ install:
   - pip install -r requirements.txt -e .
 
 script:
-  - py.test --cov=. touchdown
-  - flake8 touchdown
+  - py.test --cov=. tests/
+  - flake8 pytest_docker_tools tests
 
 after_success:
   - codecov
