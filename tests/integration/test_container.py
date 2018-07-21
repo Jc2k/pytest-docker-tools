@@ -1,6 +1,12 @@
 from pytest_docker_tools import factories
 
-factories.container('test_container_1', image=factories.repository_image('redis'))
+factories.container(
+    'test_container_1',
+    image=factories.repository_image('redis'),
+    ports={
+        '6379/tcp': None,
+    },
+)
 
 
 def test_container_created(docker_client, test_container_1):

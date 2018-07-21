@@ -53,19 +53,23 @@ def wait_for_port(container, port, timeout=10):
     '''
     Waits for a container to be listening on a given port.
 
-    The container must have netstat installed.
+    The container must have cat installed.
     '''
     def _():
-        netstat = container.exec_run('netstat -an')[1].decode('utf-8').strip()
+        netstat = container.exec_run('cat /proc/net/tcp')[1].decode('utf-8').strip()
+
         for line in netstat.split('\n'):
+            # Not interested in empty lines
             if not line:
                 continue
+
             line = line.split()
-            if line[0].strip() not in ('tcp', 'udp'):
+
+            # Only interested in listen sockets
+            if line[3] != '0A':
                 continue
-            if not line[3].strip().endswith(f':{port}'):
-                continue
-            if line[0].strip() == 'tcp' and line[5].strip() != 'LISTEN':
+
+            if str(int(line[1].split(':', 1)[1], 16)) != port:
                 continue
 
             # Port is open!

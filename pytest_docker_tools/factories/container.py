@@ -2,6 +2,8 @@ import inspect
 
 import pytest
 
+from pytest_docker_tools.utils import wait_for_port
+
 
 def get_addresses(container):
     networks = container.attrs['NetworkSettings']['Networks']
@@ -92,6 +94,11 @@ def container(name, image, *, scope='function', **kwargs):
             volumes=volumes,
             **local_kwargs
         )
+
+        # If a user has exposed a port then wait for LISTEN socket to show up in netstat
+        for port, listeners in container['container'].attrs['NetworkSettings']['Ports'].items():
+            if listeners:
+                wait_for_port(container['container'], port.split('/')[0])
 
         return container
 
