@@ -9,7 +9,7 @@ from pytest_docker_tools import factories
 
 factories.container(
     'redis0',
-    image='redis',
+    image=factories.repository_image('redis'),
     environment={
         'MARKER': 'redis0-0sider',
     }
