@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pytest-docker-tools',
-    version='0.0.1',
+    version='0.0.2.dev0',
     packages = ['pytest_docker_tools'],
     entry_points = {
         'pytest11': [
