@@ -86,10 +86,14 @@ class Container(object):
             if not listeners:
                 continue
 
-            proto, port = port.split('/')
+            port, proto = port.split('/')
+
+            assert proto in ('tcp', 'udp')
+
             if proto == 'tcp' and port not in self.get_open_tcp_ports():
                 return False
 
+            if proto == 'udp' and port not in self.get_open_udp_ports():
                 return False
 
         return True
