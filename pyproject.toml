@@ -1,0 +1,19 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "pytest_docker_tools"
+author = "John Carr"
+author-email = "john.carr@unrouted.co.uk"
+home-page = "https://github.com/Jc2k/pytest-docker-tools"
+
+requires=['pytest']
+requires-python='>=3.6'
+
+description-file='README.md'
+classifiers=[
+'Development Status :: 4 - Beta',
+'Programming Language :: Python']
+
+
