@@ -1,4 +1,5 @@
 import inspect
+from string import Formatter
 
 import pytest
 
@@ -45,6 +46,40 @@ def _process_environment(request, environment):
     return env
 
 
+class FixtureFormatter(Formatter):
+
+    def __init__(self, request):
+        self.request = request
+
+    def get_value(self, key, args, kwargs):
+        return self.request.getfixturevalue(key)
+
+
+def _process_val(request, val):
+    if isinstance(val, str):
+        return FixtureFormatter(request).format(val)
+    elif callable(val):
+        return val(*[request.getfixturevalue(f) for f in inspect.getargspec(val)[0]])
+    return val
+
+
+def _process_list(request, val):
+    return [_process(request, v) for v in val]
+
+
+def _process_dict(request, mapping):
+    return {k: _process(request, v) for (k, v) in mapping.items()}
+
+
+def _process(request, val):
+    if isinstance(val, dict):
+        return _process_dict(request, val)
+    elif isinstance(val, list):
+        return _process_list(request, val)
+    else:
+        return _process_val(request, val)
+
+
 def container(name, image, *, scope='function', **kwargs):
     '''
     Fixture factory for creating containers. For example in your conftest.py
@@ -72,7 +107,7 @@ def container(name, image, *, scope='function', **kwargs):
             _process_image(request, image),
             environment=environment,
             volumes=volumes,
-            **local_kwargs
+            **_process_dict(request, local_kwargs)
         )
 
         wait_for_callable(

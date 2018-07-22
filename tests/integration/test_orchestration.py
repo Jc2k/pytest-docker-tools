@@ -24,7 +24,8 @@ factories.container(
     },
     environment={
         'REDIS_IP': lambda redis0: redis0.ips.primary,
-    }
+    },
+    dns=['{redis0.ips.primary}'],
 )
 
 
@@ -55,5 +56,9 @@ def test_gets_volume(myvolume, mycontainer):
 
 def test_gets_network(mynetwork, mycontainer):
     ''' The container should be attached to our fixturized network '''
-
     assert mynetwork.name in mycontainer.ips
+
+
+def test_gets_dns_ip(redis0, mycontainer):
+    ''' The container should be attached to our fixturized network '''
+    assert redis0.ips.primary == mycontainer.attrs['HostConfig']['Dns'][0]
