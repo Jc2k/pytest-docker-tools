@@ -16,4 +16,5 @@ classifiers=[
 'Development Status :: 4 - Beta',
 'Programming Language :: Python']
 
-
+[tool.flit.entrypoints."pytest11"]
+docker_tools = "pytest_docker_tools.plugin"
