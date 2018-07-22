@@ -2,37 +2,17 @@ import inspect
 
 import pytest
 
-from pytest_docker_tools.utils import wait_for_port
-
-
-def get_addresses(container):
-    networks = container.attrs['NetworkSettings']['Networks']
-    addresses = {}
-    for name, network in networks.items():
-        if not network['IPAddress']:
-            return {}
-        addresses[name] = network['IPAddress']
-    return addresses
+from pytest_docker_tools.utils import wait_for_callable
+from pytest_docker_tools.wrappers import Container
 
 
 def create_container(request, docker_client, *args, **kwargs):
     kwargs.update({'detach': True})
 
     container = docker_client.containers.run(*args, **kwargs)
-    request.addfinalizer(lambda: container.remove(force=True))
+    request.addfinalizer(lambda: container.remove(force=True) and container.wait(timeout=10))
 
-    ips = get_addresses(container)
-    while not ips:
-        container.reload()
-        ips = get_addresses(container)
-
-    container_ip = next(iter(ips.values()))
-
-    return {
-        'container': container,
-        'ip': container_ip,
-        'logs': lambda: container.logs().decode('utf-8'),
-    }
+    return Container(container)
 
 
 def _process_image(request, image):
@@ -95,10 +75,10 @@ def container(name, image, *, scope='function', **kwargs):
             **local_kwargs
         )
 
-        # If a user has exposed a port then wait for LISTEN socket to show up in netstat
-        for port, listeners in container['container'].attrs['NetworkSettings']['Ports'].items():
-            if listeners:
-                wait_for_port(container['container'], port.split('/')[0])
+        wait_for_callable(
+            f'Waiting for container {name} to be ready',
+            lambda: container.reload() or container.ready(),
+        )
 
         return container
 

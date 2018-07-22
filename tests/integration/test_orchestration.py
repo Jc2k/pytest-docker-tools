@@ -23,7 +23,7 @@ factories.container(
         factories.volume('myvolume'): {'bind': '/var/tmp'},
     },
     environment={
-        'REDIS_IP': lambda redis0: redis0['ip'],
+        'REDIS_IP': lambda redis0: redis0.ips.primary,
     }
 )
 
@@ -39,14 +39,14 @@ def test_related_container_created(docker_client, mycontainer):
 
 def test_gets_related_container_ip(redis0, mycontainer):
     ''' The lambda we passed to environment should have been executed with the redis fixture value '''
-    redis_ip_env = f'REDIS_IP={redis0["ip"]}'
-    env = mycontainer['container'].attrs['Config']['Env']
+    redis_ip_env = f'REDIS_IP={redis0.ips.primary}'
+    env = mycontainer.attrs['Config']['Env']
     assert redis_ip_env in env
 
 
 def test_gets_volume(myvolume, mycontainer):
     ''' The container should have a volume configured pointing at our fixturized volume '''
-    for mount in mycontainer['container'].attrs['Mounts']:
+    for mount in mycontainer.attrs['Mounts']:
         if mount['Name'] == myvolume.name:
             break
     else:
@@ -56,4 +56,4 @@ def test_gets_volume(myvolume, mycontainer):
 def test_gets_network(mynetwork, mycontainer):
     ''' The container should be attached to our fixturized network '''
 
-    assert mynetwork.name in mycontainer['container'].attrs['NetworkSettings']['Networks']
+    assert mynetwork.name in mycontainer.ips

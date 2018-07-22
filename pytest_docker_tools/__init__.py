@@ -1,5 +1,5 @@
 from . import factories
-from .utils import wait_for_callable, wait_for_port
+from .utils import wait_for_callable
 
 
 __all__ = [

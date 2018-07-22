@@ -11,7 +11,7 @@ factories.container(
 
 def test_container_created(docker_client, test_container_1):
     for container in docker_client.containers.list():
-        if container.id == test_container_1['container'].id:
+        if container.id == test_container_1.id:
             # Looks like we managed to start one!
             break
     else:
