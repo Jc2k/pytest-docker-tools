@@ -10,7 +10,8 @@ services:
 cache: pip
 
 install:
-  - pip install -r requirements.txt -e .
+  - pip install flit
+  - flit install --symlink
 
 script:
   - coverage run --source pytest_docker_tools -m py.test
