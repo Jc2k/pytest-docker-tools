@@ -66,7 +66,50 @@ The test can then run and access the container via its ephemeral high port. At t
 If the test fails the `docker logs` output from each container will be captured and added to the test output.
 
 
-## Factories
+## Parallelism
+
+Integration and smoke tests are often slow, but a lot of time is spent waiting. So running tests in parallel is a great way to speed them up. `pytest-docker-tools` avoids creating resource names that could collide. This means its a great fit for use with `pytest-xdist`.
+
+Here is a bare minimum example that just tests creating and destroying 100 instances of a redis fixture that runs under xdist. Create a `test_xdist.py` plugin:
+
+```
+import pytest
+from pytest_docker_tools import container, fetch
+
+my_redis_image = fetch('redis:latest')
+
+my_redis = container(
+    image='{my_redis_image.id}',
+)
+
+
+@pytest.mark.parametrize("i", list(range(100)))
+def test_xdist(i, my_redis):
+    assert my_redis.status == "running"
+```
+
+And invoke it with:
+
+```
+pytest test_xdist.py -n auto
+```
+
+It will create a worker per core and run the tests in parallel:
+
+```
+===================================== test session starts ======================================
+platform darwin -- Python 3.6.5, pytest-3.6.3, py-1.5.4, pluggy-0.6.0
+rootdir: ~/pytest-docker-tools, inifile:
+plugins: xdist-1.22.2, forked-0.2, docker-tools-0.0.2
+gw0 [100] / gw1 [100] / gw2 [100] / gw3 [100] / gw4 [100] / gw5 [100] / gw6 [100] / gw7 [100]
+scheduling tests via LoadScheduling
+......................................................................................... [ 82%]
+...........                                                                              [100%]
+================================= 100 passed in 70.08 seconds ==================================
+```
+
+
+## Factories Reference
 
 ### Containers
 
