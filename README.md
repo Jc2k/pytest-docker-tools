@@ -93,7 +93,7 @@ my_microservice_backend_image = fetch('redis:latest')
 my_microservice_backend = container(image='{my_microservice_backend_image.id}')
 ```
 
-This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled.
+This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled. Note that if you don't use `build` or `fetch` to prepare a Docker image then the tag or hash that you specify must already exist on the host where you are running the tests. There is no implicit fetching of Docker images.
 
 The container will be automatically deleted after the test has finished.
 
