@@ -10,7 +10,7 @@ services:
 cache: pip
 
 install:
-  - pip install flit
+  - pip install flit -r requirements.txt
   - flit install --symlink
 
 script:
