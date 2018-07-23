@@ -1,8 +1,9 @@
-from pytest_docker_tools import factories
+from pytest_docker_tools import container, fetch
 
-factories.container(
-    'test_container_1',
-    image=factories.repository_image('redis'),
+test_container_1_image = fetch('redis')
+
+test_container_1 = container(
+    image='{test_container_1_image.id}',
     ports={
         '6379/tcp': None,
     },
@@ -10,8 +11,8 @@ factories.container(
 
 
 def test_container_created(docker_client, test_container_1):
-    for container in docker_client.containers.list():
-        if container.id == test_container_1.id:
+    for c in docker_client.containers.list():
+        if c.id == test_container_1.id:
             # Looks like we managed to start one!
             break
     else:

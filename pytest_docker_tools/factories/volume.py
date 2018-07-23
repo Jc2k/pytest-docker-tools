@@ -1,10 +1,9 @@
-import inspect
 import uuid
 
 import pytest
 
 
-def volume(name, scope='function'):
+def volume(scope='function'):
     '''
     Fixture factory for creating volumes. For example in your conftest.py you can:
 
@@ -21,18 +20,12 @@ def volume(name, scope='function'):
     '''
 
     def volume(request, docker_client):
-        vol_id = name + '-' + str(uuid.uuid4())
+        vol_id = 'pytest-' + str(uuid.uuid4())
         print(f'Creating volume {vol_id}')
         volume = docker_client.volumes.create(vol_id)
         request.addfinalizer(lambda: volume.remove(True))
         return volume
 
-    volume.__name__ = name
-
-    pytest.fixture(scope=scope, name=name)(volume)
-
-    frame = inspect.stack()[1]
-    module = inspect.getmodule(frame[0])
-    setattr(module, name, volume)
+    pytest.fixture(scope=scope)(volume)
 
     return volume

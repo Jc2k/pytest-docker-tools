@@ -5,22 +5,25 @@ on another container, and so on, then all the contains should be built in the
 right order.
 '''
 
-from pytest_docker_tools import factories
+from pytest_docker_tools import build, container, fetch, network, volume
 
-factories.container(
-    'redis0',
-    image=factories.repository_image('redis'),
+redis_image = fetch('redis:latest')
+
+redis0 = container(
+    image='{redis_image.id}',
     environment={
         'MARKER': 'redis0-0sider',
     }
 )
 
-factories.container(
-    'mycontainer',
-    image=factories.image('foobar', 'tests/integration'),
-    network=factories.network('mynetwork'),
+foobar = build(path='tests/integration')
+mynetwork = network()
+myvolume = volume()
+mycontainer = container(
+    image='{foobar.id}',
+    network='{mynetwork.id}',
     volumes={
-        factories.volume('myvolume'): {'bind': '/var/tmp'},
+        '{myvolume.id}': {'bind': '/var/tmp'},
     },
     environment={
         'REDIS_IP': lambda redis0: redis0.ips.primary,
@@ -31,8 +34,8 @@ factories.container(
 
 def test_related_container_created(docker_client, mycontainer):
     ''' Creating mycontainer should pull in redis0 because we depend on it to calculate an env variable '''
-    for container in docker_client.containers.list():
-        if 'MARKER=redis0-0sider' in container.attrs['Config']['Env']:
+    for c in docker_client.containers.list():
+        if 'MARKER=redis0-0sider' in c.attrs['Config']['Env']:
             break
     else:
         assert False, 'redis0 not running'

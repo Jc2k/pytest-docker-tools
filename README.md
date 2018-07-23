@@ -1,47 +1,111 @@
 # pytest-docker-tools
 
-This package contains some opinionated helpers for Dockerized integration
-testing drive by `py.test`.
+You have written a software application (in any language) and have packaged in as a Docker image. Now you want to smoke test the built image or do some integration testing with other containers before releasing it. You:
 
-You can define your fixtures in your `conftest.py` or in the test module
-where you are using them.
+ * want to reason about your environment in a similar way to a `docker-compose.yml`
+ * want the environment to be automatically creating and destroyed as tests run
+ * don't want to have to write loads of boilerplate code for creating the test environment
+ * want to be able to run the tests in parallel
+ * want the tests to be reliable
 
-A simple example of a container built from an image with a volume attached:
+`pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing needs.
+
+This library gives you a set of 'fixture factories'. You can define your fixtures in your `conftest.py` and access them from all your tests.
 
 ```
-from pytest_docker_tools.factories import *
+from pytest_docker_tools import *
 
-container(
-    'my_microservice',
-    image('my_microservice_image', path='.'),
-    volumes={
-      volume('my_microservice_data'): {'bind': '/var/tmp'},
-    }
+my_image = fetch('redis:latest')
+
+my_image_2 = build(
+  path='db'
 )
-```
 
-Wherever possible the arguments to container_fixture mirror the arguments to the python docker libraries `run()` API.
+my_data = volume()
 
-You can create containers that depend on other containers:
-
-```
-from pytest_docker_tools.factories import *
-
-container(
-    'my_database',
-    image('my_database_image', path='db'),
+my_microservice_backend = container(
+    image='{my_image.id}',
     volumes={
-      volume('my_microservice_data'): {'bind': '/var/tmp'},
+      '{my_data.id}': {'bind': '/var/tmp'},
     }
 )
 
-container(
-    'my_microservice',
-    image('my_microservice_image', path='microservice'),
+my_microservice = container(
+    image='{my_image_2.id}',
     environment={
-      'DATABASE_IP': lambda my_database: my_database['ip'],
+      'DATABASE_IP': '{mydatabase.ips.primary}',
+    },
+    ports={
+      '3679/tcp': None,
     }
 )
 ```
 
-Whenever you create a test that uses the `my_microservice` container it will also start a database container.
+You can now create a test that exercises your microservice:
+
+```
+def test_my_frobulator(my_microservice):
+    socket = socket.socket()
+    socket.connect('127.0.0.1', my_microservice.ports['3679/tcp'][0])
+    ....
+```
+
+In this example all the dependencies will be resolved in order and once per session:
+
+ * The latest redis:latest will be fetched
+ * A container image will be build from the `Dockerfile` in the `db` folder.
+
+Then once per test:
+
+ * A new volume will be created
+ * A new 'backend' container will be created from `redis:latest`. It will be attached to the new volume.
+ * A new 'frontend' container will be created from the freshly built container. It will be given the IP if the backend via an environment variable. Port 3679 in the container will be exposed as an ephemeral port on the host.
+
+The test can then run and access the container via its ephemeral high port. At the end of the test the environment will be thrown away.
+
+If the test fails the `docker logs` output from each container will be captured and added to the test output.
+
+
+## Factories
+
+### Containers
+
+To create a container in your tests use the `container` fixture factory.
+
+```
+from pytest_docker_tools import container
+
+my_microservice_backend = container(image='redis:latest')
+```
+
+The default scope for this factory is `function`. This means a new container will be created for each test.
+
+The `container` fixture factory supports all parameters that can be passed to the docker-py `run` method. See [here](https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run) for them all.
+
+Any variables are interpolated against other defined fixtures. This means that a fixture can depend on other fixtures, and they will be built and run in order.
+
+For example:
+
+```
+from pytest_docker_tools import container, fetch
+
+my_microservice_backend_image = fetch('redis:latest')
+my_microservice_backend = container(image='{my_microservice_backend_image.id}')
+```
+
+This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled.
+
+
+### Images
+
+To pull an image from your default repository use the `fetch` fixture factory. To build an image from local source use the `build` fixture factory.
+
+```
+from pytest_docker_tools import build, fetch
+
+my_image = fetch('redis:latest')
+
+my_image_2 = build(
+  path='db'
+)
+```

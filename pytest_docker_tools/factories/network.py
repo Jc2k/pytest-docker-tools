@@ -1,10 +1,9 @@
-import inspect
 import uuid
 
 import pytest
 
 
-def network(name, scope='function'):
+def network(scope='function'):
     '''
     Fixture factory for creating networks. For example in your conftest.py you can:
 
@@ -21,18 +20,12 @@ def network(name, scope='function'):
     '''
 
     def network(request, docker_client):
-        vol_id = name + '-' + str(uuid.uuid4())
-        print(f'Creating network {vol_id}')
-        network = docker_client.networks.create(vol_id)
+        network_id = 'pytest-' + str(uuid.uuid4())
+        print(f'Creating network {network_id}')
+        network = docker_client.networks.create(network_id)
         request.addfinalizer(lambda: network.remove())
         return network
 
-    network.__name__ = name
-
-    pytest.fixture(scope=scope, name=name)(network)
-
-    frame = inspect.stack()[1]
-    module = inspect.getmodule(frame[0])
-    setattr(module, name, network)
+    pytest.fixture(scope=scope)(network)
 
     return network

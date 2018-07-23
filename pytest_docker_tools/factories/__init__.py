@@ -1,14 +1,14 @@
+from .build import build
 from .container import container
-from .image import image
+from .fetch import fetch
 from .network import network
-from .repository_image import repository_image
 from .volume import volume
 
 
 __all__ = [
+    'build',
     'container',
-    'image',
+    'fetch',
     'network',
-    'repository_image',
     'volume',
 ]
