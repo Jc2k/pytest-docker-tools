@@ -8,9 +8,11 @@ You have written a software application (in any language) and have packaged in a
  * want to be able to run the tests in parallel
  * want the tests to be reliable
 
-`pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing needs.
+`pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing needs. It strives to keep your environment definition declarative, like a docker-compose.yml. It embraces py.test fixture overloading. It tries not to be too magical.
 
-This library gives you a set of 'fixture factories'. You can define your fixtures in your `conftest.py` and access them from all your tests.
+The man interface provided by this library is a set of 'fixture factories'. It provides a 'best in class' implementation of a fixture, and then allows you to treat it as a template - injecting your own configuration declaratively. You can define your fixtures in your `conftest.py` and access them from all your tests, and you can override them as needed in individual test modules.
+
+The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice with a redis backend:
 
 ```
 from pytest_docker_tools import *
@@ -139,6 +141,45 @@ my_microservice_backend = container(image='{my_microservice_backend_image.id}')
 This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled. Note that if you don't use `build` or `fetch` to prepare a Docker image then the tag or hash that you specify must already exist on the host where you are running the tests. There is no implicit fetching of Docker images.
 
 The container will be automatically deleted after the test has finished.
+
+
+#### Ip Addresses
+
+If your container is only attached to a single network you can get its Ip address through a helper property on the container object:
+
+```
+my_service = container(
+  image='{my_image.id}',
+)
+
+def test_get_service_ip(my_service):
+    print(my_service.ips.primary)
+```
+
+If you want to look up its ip address by network you can also access it more specifically:
+
+```
+def test_get_service_ip(my_network, my_service):
+    print(my_service.ips[my_network])
+```
+
+#### Ports
+
+The factory takes the same port arguments as the official Python Docker API. We recommend using the ephemeral high ports syntax:
+
+```
+my_service = container(
+  image='{my_image.id}',
+  ports={'3275/tcp': None}
+)
+```
+
+Docker will map port 3275 in the container to a random port on your host. In order to access it from your tests you can get the bound port from the container instance:
+
+```
+def test_connect_my_service(my_service):
+    print(my_service.ports['3275/tcp'][0])
+```
 
 
 ### Images
