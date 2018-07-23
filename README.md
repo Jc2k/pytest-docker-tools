@@ -3,7 +3,7 @@
 You have written a software application (in any language) and have packaged in as a Docker image. Now you want to smoke test the built image or do some integration testing with other containers before releasing it. You:
 
  * want to reason about your environment in a similar way to a `docker-compose.yml`
- * want the environment to be automatically creating and destroyed as tests run
+ * want the environment to be automatically created and destroyed as tests run
  * don't want to have to write loads of boilerplate code for creating the test environment
  * want to be able to run the tests in parallel
  * want the tests to be reliable
@@ -95,6 +95,8 @@ my_microservice_backend = container(image='{my_microservice_backend_image.id}')
 
 This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled.
 
+The container will be automatically deleted after the test has finished.
+
 
 ### Images
 
@@ -109,3 +111,33 @@ my_image_2 = build(
   path='db'
 )
 ```
+
+The default scope for this factory is `session`. This means the fixture will only build or fetch once per py.test invocation. The fixture will not be triggered until a test (or other fixture) tries to use it. This means you won't waste time building an image if you aren't running the test that uses it.
+
+
+### Networks
+
+By default any containers you create with the `container()` fixture factory will run on your default docker network. You can create a dedicated network for your test with the `network()` fixture factory.
+
+```
+from pytest_docker_tools import network
+
+frontend_network = network()
+```
+
+The default scope for this factory is `function`. This means a new network will be created for each test that is executed.
+
+The network will be removed after the test using it has finished.
+
+
+#### Volumes
+
+In the ideal case a Docker container instance is read only. No data inside the container is written to, if it is its to a volume. If you are testing that your service can run read only you might want to mount a rw volume. You can use the `volume()` fixture factory to create a Docker volume with a lifecycle tied to your tests.
+
+```
+from pytest_docker_tools import volume
+
+backend_storage = volume()
+```
+
+The default scope for this factory is `function`. This means a new volume will be created for each test that is executed. The volume will be removed after the test using it has finished.
