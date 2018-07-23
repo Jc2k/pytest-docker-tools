@@ -34,7 +34,7 @@ mycontainer = container(
 
 def test_related_container_created(docker_client, mycontainer):
     ''' Creating mycontainer should pull in redis0 because we depend on it to calculate an env variable '''
-    for c in docker_client.containers.list():
+    for c in docker_client.containers.list(ignore_removed=True):
         if 'MARKER=redis0-0sider' in c.attrs['Config']['Env']:
             break
     else:

@@ -11,7 +11,7 @@ test_container_1 = container(
 
 
 def test_container_created(docker_client, test_container_1):
-    for c in docker_client.containers.list():
+    for c in docker_client.containers.list(ignore_removed=True):
         if c.id == test_container_1.id:
             # Looks like we managed to start one!
             break
