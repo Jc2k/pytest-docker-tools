@@ -13,8 +13,12 @@ requires-python='>=3.6'
 
 description-file='README.md'
 classifiers=[
-'Development Status :: 4 - Beta',
-'Programming Language :: Python']
+    'Development Status :: 4 - Beta',
+    'Programming Language :: Python',
+    'Framework :: Pytest',
+    'License :: OSI Approved :: Apache Software License',
+    'Topic :: Software Development :: Testing',
+]
 
 [tool.flit.entrypoints."pytest11"]
 docker_tools = "pytest_docker_tools.plugin"
