@@ -34,8 +34,9 @@ mycontainer = container(
 
 def test_related_container_created(docker_client, mycontainer):
     ''' Creating mycontainer should pull in redis0 because we depend on it to calculate an env variable '''
+    backend_ip = mycontainer.env['REDIS_IP']
     for c in docker_client.containers.list(ignore_removed=True):
-        if 'MARKER=redis0-0sider' in c.attrs['Config']['Env']:
+        if 'MARKER=redis0-0sider' in c.attrs['Config']['Env'] and backend_ip in str(c.attrs):
             break
     else:
         assert False, 'redis0 not running'
@@ -43,9 +44,7 @@ def test_related_container_created(docker_client, mycontainer):
 
 def test_gets_related_container_ip(redis0, mycontainer):
     ''' The lambda we passed to environment should have been executed with the redis fixture value '''
-    redis_ip_env = f'REDIS_IP={redis0.ips.primary}'
-    env = mycontainer.attrs['Config']['Env']
-    assert redis_ip_env in env
+    assert mycontainer.env['REDIS_IP'] == redis0.ips.primary
 
 
 def test_gets_volume(myvolume, mycontainer):

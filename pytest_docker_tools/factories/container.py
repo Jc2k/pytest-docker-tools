@@ -2,6 +2,7 @@ import inspect
 from string import Formatter
 
 import pytest
+
 from pytest_docker_tools.utils import wait_for_callable
 from pytest_docker_tools.wrappers import Container
 
