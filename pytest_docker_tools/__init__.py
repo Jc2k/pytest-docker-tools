@@ -1,11 +1,11 @@
 '''
-A set of tools for creating declarative docker py.test integration fixtures.
+An opionated set of helpers for defining Docker integration test environments with py.test fixtures.
 '''
 
 from .factories import build, container, fetch, network, volume
 
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 __all__ = [
