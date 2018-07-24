@@ -276,7 +276,7 @@ import pytest
 from pytest_docker_tools import container, fetch
 
 
-hpfeeds_broker_image = fetch('jc2k/hpfeeds3-broker:later')
+hpfeeds_broker_image = fetch('jc2k/hpfeeds3-broker:latest')
 
 hpfeeds_broker = container(
     image='{hpfeeds_broker_image.id}',
@@ -296,6 +296,7 @@ hpfeeds_broker = container(
     },
 )
 
+@pytest.fixture(scope='function')
 def hpfeeds_client(hpfeeds_broker):
     client = hpfeeds.new(
         '127.0.0.1',
