@@ -8,7 +8,7 @@ author = "John Carr"
 author-email = "john.carr@unrouted.co.uk"
 home-page = "https://github.com/Jc2k/pytest-docker-tools"
 
-requires=['pytest']
+requires=['pytest', 'docker']
 requires-python='>=3.6'
 
 description-file='README.md'
