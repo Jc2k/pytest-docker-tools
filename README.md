@@ -235,3 +235,30 @@ backend_storage = volume()
 ```
 
 The default scope for this factory is `function`. This means a new volume will be created for each test that is executed. The volume will be removed after the test using it has finished.
+
+
+## Fixtures
+
+### docker_client
+
+The `docker_client` fixture returns an instance of the official docker client.
+
+```
+def test_container_created(docker_client, test_container_1):
+    for c in docker_client.containers.list(ignore_removed=True):
+        if c.id == test_container_1.id:
+            # Looks like we managed to start one!
+            break
+    else:
+        assert False, 'Looks like we failed to start a container'
+```
+
+Take care when using the `docker_client` directly:
+
+ * Obviously resources created directly won't be removed at the end of the test automatically
+ * It's easy to break xdist compatibility
+   * Always use `ignore_removed` with `docker_client.containers.list()` - it is racy without
+   * It's easy to find other instances of the resources you are working with (created in other workers). Be mindful of this!
+ * Don't take destructive action - someone could be running tests on a machine with other (non-test) containers running
+
+This is the fixture used by our fixture factories. This means if you define a `docker_client` fixture of your own then the tests will use that instead.
