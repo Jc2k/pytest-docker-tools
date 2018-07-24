@@ -107,6 +107,10 @@ class Container(object):
         return self._container.id
 
     @property
+    def name(self):
+        return self._container.name
+
+    @property
     def env(self):
         kv_pairs = map(lambda v: v.split('=', 1), self._container.attrs['Config']['Env'])
         return {k: v for k, v in kv_pairs}
