@@ -262,3 +262,220 @@ Take care when using the `docker_client` directly:
  * Don't take destructive action - someone could be running tests on a machine with other (non-test) containers running
 
 This is the fixture used by our fixture factories. This means if you define a `docker_client` fixture of your own then the tests will use that instead.
+
+
+## Tips and tricks
+
+### Client fixtures
+
+You will probably want to create an API client for the service you are testing.
+
+```
+import hpfeeds
+import pytest
+from pytest_docker_tools import container, fetch
+
+
+hpfeeds_broker_image = fetch('jc2k/hpfeeds3-broker:later')
+
+hpfeeds_broker = container(
+    image='{hpfeeds_broker_image.id}',
+    environment={
+        'HPFEEDS_TEST_SECRET': 'test',
+        'HPFEEDS_TEST_SUBCHANS': 'test',
+        'HPFEEDS_TEST_PUBCHANS': 'test',
+    },
+    command=[
+        '/app/bin/hpfeeds-broker',
+        '--bind=0.0.0.0:20000',
+        # Read user creds from environment variables
+        '--auth=env',
+    ],
+    ports={
+        '20000/tcp': None,
+    },
+)
+
+def hpfeeds_client(hpfeeds_broker):
+    client = hpfeeds.new(
+        '127.0.0.1',
+        hpfeeds_broker.ports['20000/tcp'][0],
+        'test',
+        'test',
+    )
+
+    request.addfinalizer(client.close)
+    request.addfinalizer(client.stop)
+
+    return client
+
+
+def test_send_message(hpfeeds_client):
+    hpfeeds_client.publish('test', b'DATA DATA DATA')
+```
+
+In this example, any test that uses the `hpfeeds_client` fixture will get a properly configure client connected to a broker running in a Docker container on an ephemeral high port. When the test finishes the client will cleanly disconnect, and the docker container will be thrown away.
+
+
+### Fixture overloading
+
+Complicated environments can be defined with fixture factories. They form a directed acyclic graph. By using fixture overloading it is possible to (in the context of a single test module) replace a node in that dependency graph without having to redefine the entire environment.
+
+#### Replacing a container fixture without having to redefine its dependents
+
+You can define a fixture in your `conftest.py`:
+
+```
+from pytest_docker_tools import *
+
+
+redis_image = fetch('redis:latest')
+api_server_image = build(path='db')
+
+redis = container(
+    image='{redis_image.id}',
+)
+
+api_server = container(
+    image='{api_server_image.id}',
+    environment={
+      'DATABASE_IP': '{redis.ips.primary}',
+    },
+    ports={
+      '8080/tcp': None,
+    }
+)
+```
+
+You can overload these fixtures in your test modules. For example, if redis had a magic replication feature and you want to test for an edge case with your API you could in your `test_magic_rep.py`:
+
+```
+import socket
+
+from pytest_docker_tools import *
+
+
+redis = container(
+  image='{redis_image.id}',
+  environment={
+    'REDIS_MAGIC_REP': '1',
+  }
+)
+
+
+def test_magic_rep(api_server):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', api_server.ports['8080/tcp'][0]))
+    sock.close()
+```
+
+Here we have redefined the redis container locally in `test_magic_rep.py`. It is able to use the `redis_image` fixture we defined in `conftest.py`. More crucially though, in `test_magic_rep.py` when we use the core `api_server` fixture it actually pulls in the local definition of `redis` and not the one from `conftest.py`! You don't have to redefine anything else. It just works.
+
+
+#### Injecting fixture configuration through fixtures
+
+You can pull in normal py.test fixtures from your fixture factory too. This means we can use fixture overloading and pass in config. In your `conftest.py`:
+
+```
+import pytest
+from pytest_docker_tools import *
+
+
+redis_image = fetch('redis:latest')
+api_server_image = build(path='db')
+
+redis = container(
+    image='{redis_image.id}',
+)
+
+api_server = container(
+    image='{api_server_image.id}',
+    environment={
+      'DATABASE_IP': '{redis.ips.primary}',
+      'AUTHENTICATION_BACKEND': '{authentication_backend}'
+    },
+    ports={
+      '8080/tcp': None,
+    }
+)
+
+
+@pytest.fixture
+def authentication_backend():
+    return 'memory'
+```
+
+Your test can now inject a different authentication backend by overloading the `authentication_backend` fixture in your 'test_auth_sqlite.py' module:
+
+```
+import socket
+
+import pytest
+
+
+@pytest.fixture
+def authentication_backend():
+    return 'sqlite'
+
+
+def test_magic_rep(api_server):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', api_server.ports['8080/tcp'][0]))
+    sock.close()
+```
+
+Your `api_server` container (and its `redis` backend) will be built as normal, only in this one test module it will use its sqlite backend.
+
+
+### Fixture parameterisation
+
+You can create parameterisation fixtures. Perhaps you wan to run all your `api_server` tests against both of your authentication backends. In your `conftest.py`:
+
+```
+import pytest
+from pytest_docker_tools import *
+
+
+redis_image = fetch('redis:latest')
+api_server_image = build(path='db')
+
+redis = container(
+    image='{redis_image.id}',
+)
+
+api_server_memory = container(
+    image='{api_server_image.id}',
+    environment={
+      'DATABASE_IP': '{redis.ips.primary}',
+      'AUTHENTICATION_BACKEND': 'memory'
+    },
+    ports={
+      '8080/tcp': None,
+    }
+)
+
+api_server_sqlite = container(
+    image='{api_server_image.id}',
+    environment={
+      'DATABASE_IP': '{redis.ips.primary}',
+      'AUTHENTICATION_BACKEND': 'sqlite'
+    },
+    ports={
+      '8080/tcp': None,
+    }
+)
+
+
+@pytest.fixture(scope='function', params=['api_server_memory', 'api_server_sqlite'])
+def apiserver(request):
+    return request.getfixturevalue(request.param)
+```
+
+Then in your test:
+
+```
+def test_list_users(apiserver):
+    pass
+```
+
+This test will be invoked twice - once against the memory backend, and once against the sqlite backend.
