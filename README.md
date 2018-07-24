@@ -14,7 +14,7 @@ The main interface provided by this library is a set of 'fixture factories'. It 
 
 The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice with a redis backend:
 
-```
+```python
 from pytest_docker_tools import *
 
 my_image = fetch('redis:latest')
@@ -45,7 +45,7 @@ my_microservice = container(
 
 You can now create a test that exercises your microservice:
 
-```
+```python
 def test_my_frobulator(my_microservice):
     socket = socket.socket()
     socket.connect('127.0.0.1', my_microservice.ports['3679/tcp'][0])
@@ -74,7 +74,7 @@ Integration and smoke tests are often slow, but a lot of time is spent waiting. 
 
 Here is a bare minimum example that just tests creating and destroying 100 instances of a redis fixture that runs under xdist. Create a `test_xdist.py` plugin:
 
-```
+```python
 import pytest
 from pytest_docker_tools import container, fetch
 
@@ -92,7 +92,7 @@ def test_xdist(i, my_redis):
 
 And invoke it with:
 
-```
+```bash
 pytest test_xdist.py -n auto
 ```
 
@@ -117,7 +117,7 @@ scheduling tests via LoadScheduling
 
 To create a container in your tests use the `container` fixture factory.
 
-```
+```python
 from pytest_docker_tools import container
 
 my_microservice_backend = container(image='redis:latest')
@@ -131,7 +131,7 @@ Any string variables are interpolated against other defined fixtures. This means
 
 For example:
 
-```
+```python
 from pytest_docker_tools import container, fetch
 
 my_microservice_backend_image = fetch('redis:latest')
@@ -147,7 +147,7 @@ The container will be automatically deleted after the test has finished.
 
 If your container is only attached to a single network you can get its Ip address through a helper property on the container object:
 
-```
+```python
 my_service = container(
   image='{my_image.id}',
 )
@@ -158,7 +158,7 @@ def test_get_service_ip(my_service):
 
 If you want to look up its ip address by network you can also access it more specifically:
 
-```
+```python
 def test_get_service_ip(my_network, my_service):
     print(my_service.ips[my_network])
 ```
@@ -167,7 +167,7 @@ def test_get_service_ip(my_network, my_service):
 
 The factory takes the same port arguments as the official Python Docker API. We recommend using the ephemeral high ports syntax:
 
-```
+```python
 my_service = container(
   image='{my_image.id}',
   ports={'3275/tcp': None}
@@ -176,7 +176,7 @@ my_service = container(
 
 Docker will map port 3275 in the container to a random port on your host. In order to access it from your tests you can get the bound port from the container instance:
 
-```
+```python
 def test_connect_my_service(my_service):
     print(my_service.ports['3275/tcp'][0])
 ```
@@ -186,7 +186,7 @@ def test_connect_my_service(my_service):
 
 You can inspect the logs of your container with the logs method:
 
-```
+```python
 def test_logs(my_redis_service):
     assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in my_redis_service.logs()
 ```
@@ -196,7 +196,7 @@ def test_logs(my_redis_service):
 
 To pull an image from your default repository use the `fetch` fixture factory. To build an image from local source use the `build` fixture factory.
 
-```
+```python
 from pytest_docker_tools import build, fetch
 
 my_image = fetch('redis:latest')
@@ -213,7 +213,7 @@ The default scope for this factory is `session`. This means the fixture will onl
 
 By default any containers you create with the `container()` fixture factory will run on your default docker network. You can create a dedicated network for your test with the `network()` fixture factory.
 
-```
+```python
 from pytest_docker_tools import network
 
 frontend_network = network()
@@ -228,7 +228,7 @@ The network will be removed after the test using it has finished.
 
 In the ideal case a Docker container instance is read only. No data inside the container is written to, if it is its to a volume. If you are testing that your service can run read only you might want to mount a rw volume. You can use the `volume()` fixture factory to create a Docker volume with a lifecycle tied to your tests.
 
-```
+```python
 from pytest_docker_tools import volume
 
 backend_storage = volume()
@@ -243,7 +243,7 @@ The default scope for this factory is `function`. This means a new volume will b
 
 The `docker_client` fixture returns an instance of the official docker client.
 
-```
+```python
 def test_container_created(docker_client, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         if c.id == test_container_1.id:
@@ -270,7 +270,7 @@ This is the fixture used by our fixture factories. This means if you define a `d
 
 You will probably want to create an API client for the service you are testing.
 
-```
+```python
 import hpfeeds
 import pytest
 from pytest_docker_tools import container, fetch
@@ -326,7 +326,7 @@ Complicated environments can be defined with fixture factories. They form a dire
 
 You can define a fixture in your `conftest.py`:
 
-```
+```python
 from pytest_docker_tools import *
 
 
@@ -350,7 +350,7 @@ api_server = container(
 
 You can then overload these fixtures in your test modules. For example, if redis had a magic replication feature and you want to test for an edge case with your API you could in your `test_magic_rep.py`:
 
-```
+```python
 import socket
 
 from pytest_docker_tools import *
@@ -377,7 +377,7 @@ Here we have redefined the redis container locally in `test_magic_rep.py`. It is
 
 You can pull in normal py.test fixtures from your fixture factory too. This means we can use fixture overloading and pass in config. In your `conftest.py`:
 
-```
+```python
 import pytest
 from pytest_docker_tools import *
 
@@ -408,7 +408,7 @@ def authentication_backend():
 
 Your test can now inject a different authentication backend by overloading the `authentication_backend` fixture in your 'test_auth_sqlite.py' module:
 
-```
+```python
 import socket
 
 import pytest
@@ -432,7 +432,7 @@ Your `api_server` container (and its `redis` backend) will be built as normal, o
 
 You can create parameterisation fixtures. Perhaps you wan to run all your `api_server` tests against both of your authentication backends. In your `conftest.py`:
 
-```
+```python
 import pytest
 from pytest_docker_tools import *
 
@@ -474,7 +474,7 @@ def apiserver(request):
 
 Then in your test:
 
-```
+```python
 def test_list_users(apiserver):
     pass
 ```
