@@ -10,7 +10,7 @@ You have written a software application (in any language) and have packaged in a
 
 `pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing needs. It strives to keep your environment definition declarative, like a docker-compose.yml. It embraces py.test fixture overloading. It tries not to be too magical.
 
-The man interface provided by this library is a set of 'fixture factories'. It provides a 'best in class' implementation of a fixture, and then allows you to treat it as a template - injecting your own configuration declaratively. You can define your fixtures in your `conftest.py` and access them from all your tests, and you can override them as needed in individual test modules.
+The main interface provided by this library is a set of 'fixture factories'. It provides a 'best in class' implementation of a fixture, and then allows you to treat it as a template - injecting your own configuration declaratively. You can define your fixtures in your `conftest.py` and access them from all your tests, and you can override them as needed in individual test modules.
 
 The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice with a redis backend:
 
@@ -54,7 +54,7 @@ def test_my_frobulator(my_microservice):
 
 In this example all the dependencies will be resolved in order and once per session:
 
- * The latest redis:latest will be fetched
+ * The latest `redis:latest` will be fetched
  * A container image will be build from the `Dockerfile` in the `db` folder.
 
 Then once per test:
@@ -70,7 +70,7 @@ If the test fails the `docker logs` output from each container will be captured 
 
 ## Parallelism
 
-Integration and smoke tests are often slow, but a lot of time is spent waiting. So running tests in parallel is a great way to speed them up. `pytest-docker-tools` avoids creating resource names that could collide. This means its a great fit for use with `pytest-xdist`.
+Integration and smoke tests are often slow, but a lot of time is spent waiting. So running tests in parallel is a great way to speed them up. `pytest-docker-tools` avoids creating resource names that could collide. It also makes it easy to not care what port your service is bound to. This means its a great fit for use with `pytest-xdist`.
 
 Here is a bare minimum example that just tests creating and destroying 100 instances of a redis fixture that runs under xdist. Create a `test_xdist.py` plugin:
 
@@ -127,7 +127,7 @@ The default scope for this factory is `function`. This means a new container wil
 
 The `container` fixture factory supports all parameters that can be passed to the docker-py `run` method. See [here](https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run) for them all.
 
-Any variables are interpolated against other defined fixtures. This means that a fixture can depend on other fixtures, and they will be built and run in order.
+Any string variables are interpolated against other defined fixtures. This means that a fixture can depend on other fixtures, and they will be built and run in order.
 
 For example:
 
@@ -255,11 +255,11 @@ def test_container_created(docker_client, test_container_1):
 
 Take care when using the `docker_client` directly:
 
- * Obviously resources created directly won't be removed at the end of the test automatically
+ * Obviously resources created imperatively via the API won't be removed at the end of the test automatically
  * It's easy to break xdist compatibility
    * Always use `ignore_removed` with `docker_client.containers.list()` - it is racy without
    * It's easy to find other instances of the resources you are working with (created in other workers). Be mindful of this!
- * Don't take destructive action - someone could be running tests on a machine with other (non-test) containers running
+ * Don't take destructive action - someone could be running tests on a machine with other (non-test) containers running, collateral damage is easy and should be avoided.
 
 This is the fixture used by our fixture factories. This means if you define a `docker_client` fixture of your own then the tests will use that instead.
 
@@ -347,7 +347,7 @@ api_server = container(
 )
 ```
 
-You can overload these fixtures in your test modules. For example, if redis had a magic replication feature and you want to test for an edge case with your API you could in your `test_magic_rep.py`:
+You can then overload these fixtures in your test modules. For example, if redis had a magic replication feature and you want to test for an edge case with your API you could in your `test_magic_rep.py`:
 
 ```
 import socket
