@@ -1,6 +1,8 @@
 import docker
 import pytest
 
+from .wrappers import Container
+
 
 @pytest.fixture(scope='session')
 def docker_client(request):
@@ -17,16 +19,12 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
 
-    if rep.when != 'call':
-        return
-
     if not rep.failed:
         return
 
     for name, fixture in item.funcargs.items():
-        if isinstance(fixture, dict) and 'container' in fixture:
-            container = fixture['container']
+        if isinstance(fixture, Container):
             rep.sections.append((
-                name + ': ' + container.name,
-                container.logs().decode('utf-8'),
+                name + ': ' + fixture.name,
+                container.logs(),
             ))
