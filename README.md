@@ -182,6 +182,16 @@ def test_connect_my_service(my_service):
 ```
 
 
+#### Logs
+
+You can inspect the logs of your container with the logs method:
+
+```
+def test_logs(my_redis_service):
+    assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in my_redis_service.logs()
+```
+
+
 ### Images
 
 To pull an image from your default repository use the `fetch` fixture factory. To build an image from local source use the `build` fixture factory.
