@@ -26,5 +26,5 @@ def pytest_runtest_makereport(item, call):
         if isinstance(fixture, Container):
             rep.sections.append((
                 name + ': ' + fixture.name,
-                container.logs(),
+                fixture.logs(),
             ))
