@@ -15,6 +15,8 @@ The main interface provided by this library is a set of 'fixture factories'. It 
 The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice with a redis backend:
 
 ```python
+# conftest.py
+
 from pytest_docker_tools import fetch, build, volume, container
 
 my_image = fetch('redis:latest')
@@ -74,6 +76,7 @@ Integration and smoke tests are often slow, but a lot of time is spent waiting. 
 Here is a bare minimum example that just tests creating and destroying 100 instances of a redis fixture that runs under xdist. Create a `test_xdist.py` plugin:
 
 ```python
+
 import pytest
 from pytest_docker_tools import container, fetch
 
@@ -227,7 +230,7 @@ The default scope for this factory is `function`. This means a new network will 
 The network will be removed after the test using it has finished.
 
 
-#### Volumes
+### Volumes
 
 In the ideal case a Docker container instance is read only. No data inside the container is written to, if it is its to a volume. If you are testing that your service can run read only you might want to mount a rw volume. You can use the `volume()` fixture factory to create a Docker volume with a lifecycle tied to your tests.
 
