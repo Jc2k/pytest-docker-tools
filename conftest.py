@@ -1,4 +1,19 @@
+import imp
+
 import pytest
+from _pytest.python import PyCollector
+from _pytest import nodes
+
+
+class MarkdownItem(nodes.File, PyCollector):
+
+    def __init__(self, name, file, code):
+        self._code_obj = imp.new_module(name)
+        exec(code, self._code_obj.__dict__)
+        super().__init__(name, file)
+
+    def _getobj(self):
+        return self._code_obj
 
 
 class MarkdownFile(pytest.File):
@@ -8,12 +23,10 @@ class MarkdownFile(pytest.File):
     # https://github.com/pytest-dev/pytest/blob/master/src/_pytest/python.py
 
     def collect(self):
-        print('collect')
         mode = None
         output = []
         fp = self.fspath.open()
         for i, line in enumerate(fp.readlines()):
-            output.append('\n')
             if mode is None and line.strip() == '```python':
                 mode = 'first_line'
                 continue
@@ -22,14 +35,15 @@ class MarkdownFile(pytest.File):
                     mode = None
                     continue
                 mode = 'test'
-            elif mode == 'test':
                 output.append(line)
             elif line.strip() == '```':
                 if mode == 'test':
-                    print('emit module')
-                    yield ModuleItem(name, self, spec)
+                    yield MarkdownItem(f'line_{i}', self, '\n'.join(output))
+                output = []
                 mode = None
                 continue
+            elif mode == 'test':
+                output.append(line)
 
 
 def pytest_collect_file(parent, path):

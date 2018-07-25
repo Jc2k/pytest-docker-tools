@@ -274,6 +274,7 @@ This is the fixture used by our fixture factories. This means if you define a `d
 You will probably want to create an API client for the service you are testing.
 
 ```python
+
 import hpfeeds
 import pytest
 from pytest_docker_tools import container, fetch
