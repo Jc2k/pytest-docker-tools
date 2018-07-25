@@ -15,7 +15,7 @@ The main interface provided by this library is a set of 'fixture factories'. It 
 The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice with a redis backend:
 
 ```python
-from pytest_docker_tools import *
+from pytest_docker_tools import fetch, build, volume, container
 
 my_image = fetch('redis:latest')
 
@@ -49,7 +49,6 @@ You can now create a test that exercises your microservice:
 def test_my_frobulator(my_microservice):
     socket = socket.socket()
     socket.connect('127.0.0.1', my_microservice.ports['3679/tcp'][0])
-    ....
 ```
 
 In this example all the dependencies will be resolved in order and once per session:
@@ -148,6 +147,8 @@ The container will be automatically deleted after the test has finished.
 If your container is only attached to a single network you can get its Ip address through a helper property on the container object:
 
 ```python
+from pytest_docker_tools import container
+
 my_service = container(
   image='{my_image.id}',
 )
@@ -168,6 +169,8 @@ def test_get_service_ip(my_network, my_service):
 The factory takes the same port arguments as the official Python Docker API. We recommend using the ephemeral high ports syntax:
 
 ```python
+from pytest_docker_tools import container
+
 my_service = container(
   image='{my_image.id}',
   ports={'3275/tcp': None}
@@ -327,7 +330,7 @@ Complicated environments can be defined with fixture factories. They form a dire
 You can define a fixture in your `conftest.py`:
 
 ```python
-from pytest_docker_tools import *
+from pytest_docker_tools import fetch, build, container
 
 
 redis_image = fetch('redis:latest')
@@ -353,7 +356,7 @@ You can then overload these fixtures in your test modules. For example, if redis
 ```python
 import socket
 
-from pytest_docker_tools import *
+from pytest_docker_tools import container
 
 
 redis = container(
@@ -379,7 +382,7 @@ You can pull in normal py.test fixtures from your fixture factory too. This mean
 
 ```python
 import pytest
-from pytest_docker_tools import *
+from pytest_docker_tools import fetch, build, container
 
 
 redis_image = fetch('redis:latest')
@@ -434,7 +437,7 @@ You can create parameterisation fixtures. Perhaps you wan to run all your `api_s
 
 ```python
 import pytest
-from pytest_docker_tools import *
+from pytest_docker_tools import fetch, build, container
 
 
 redis_image = fetch('redis:latest')
