@@ -22,9 +22,18 @@ def pytest_runtest_makereport(item, call):
     if not rep.failed:
         return
 
-    for name, fixture in item.funcargs.items():
-        if isinstance(fixture, Container):
-            rep.sections.append((
-                name + ': ' + fixture.name,
-                fixture.logs(),
-            ))
+    if 'request' in item.funcargs:
+        for name, fixturedef in item.funcargs['request']._fixture_defs.items():
+            fixture = fixturedef.cached_result[0]
+            if isinstance(fixture, Container):
+                rep.sections.append((
+                    name + ': ' + fixture.name,
+                    fixture.logs(),
+                ))
+    else:
+        for name, fixture in item.funcargs.items():
+            if isinstance(fixture, Container):
+                rep.sections.append((
+                    name + ': ' + fixture.name,
+                    fixture.logs(),
+                ))
