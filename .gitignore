@@ -1,3 +1,4 @@
+__pycache__
 .pytest_cache/
 pytest_docker_tools.egg-info
 *.pyc
