@@ -1,5 +1,7 @@
 import os
+from http.client import HTTPConnection
 
+import pytest
 from pytest_docker_tools import build, container
 
 fakedns_image = build(
@@ -25,3 +27,9 @@ apiserver = container(
     },
     dns=['{fakedns.ips.primary}']
 )
+
+
+@pytest.fixture
+def apiclient(apiserver):
+    port = apiserver.ports['8080/tcp'][0]
+    return HTTPConnection(f'localhost:{port}')
