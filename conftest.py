@@ -18,13 +18,10 @@ class MarkdownItem(Module):
 
 class MarkdownFile(pytest.File):
 
-    # https://docs.pytest.org/en/latest/example/nonpython.html#yaml-plugin
-    # https://github.com/pytest-dev/pytest/blob/master/src/_pytest/doctest.py#L344
-    # https://github.com/pytest-dev/pytest/blob/master/src/_pytest/python.py
-
     def collect(self):
+        print(self.nodeid)
         mode = None
-        stack = [(0, self, '')]
+        stack = [(0, self, self.name)]
         output = []
         fp = self.fspath.open()
         for i, line in enumerate(fp.readlines()):
@@ -43,9 +40,10 @@ class MarkdownFile(pytest.File):
 
                     nodeid = '::'.join(s[2] for s in stack if s[2]) + '::' + name
                     stack.append((level_count, pytest.Item(name, stack[-1][1], nodeid=nodeid), name))
+                    print(stack[-1][1].nodeid)
 
                     current_level = level_count
- 
+
             elif mode is 'first_line':
                 if line.strip() == '':
                     mode = None
@@ -60,7 +58,9 @@ class MarkdownFile(pytest.File):
                         nodeid = stack[-1][1].nodeid
                     else:
                         nodeid = stack[-1][1].nodeid + '::' + name
-                    yield MarkdownItem(name, stack[-1][1], '\n'.join(output), nodeid=nodeid)
+                    mi = MarkdownItem(name, stack[-1][1], '\n'.join(output), nodeid=nodeid)
+                    print(mi.nodeid)
+                    yield mi
 
                 output = []
                 mode = None

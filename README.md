@@ -231,7 +231,7 @@ Docker will map port 8080 in the container to a random port on your host. In ord
 
 ```python
 def test_connect_my_service(apiserver):
-    assert my_service.ports['8080/tcp'][0] != 8080
+    assert apiserver.ports['8080/tcp'][0] != 8080
 ```
 
 
@@ -240,11 +240,14 @@ def test_connect_my_service(apiserver):
 You can inspect the logs of your container with the logs method:
 
 ```python
+from pytest_docker_tools import container, fetch
+
+
 redis_image = fetch('redis:latest')
 redis = container(image='{redis_image.id}')
 
-def test_logs(my_redis_service):
-    assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in my_redis_service.logs()
+def test_logs(redis):
+    assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in redis.logs()
 ```
 
 
@@ -300,9 +303,9 @@ The default scope for this factory is `function`. This means a new volume will b
 The `docker_client` fixture returns an instance of the official docker client.
 
 ```python
-def test_container_created(docker_client, test_container_1):
+def test_container_created(docker_client, fakedns):
     for c in docker_client.containers.list(ignore_removed=True):
-        if c.id == test_container_1.id:
+        if c.id == fakedns.id:
             # Looks like we managed to start one!
             break
     else:
@@ -324,52 +327,60 @@ This is the fixture used by our fixture factories. This means if you define a `d
 
 ### Client fixtures
 
-You will probably want to create an API client for the service you are testing.
+You will probably want to create an API client for the service you are testing. Although we've already done this in the README, its worth calling it out. You can define a client fixture, have it depend on your docker containers, and then only have to reference the client from your tests.
 
 ```python
+# conftest.py
 
-import hpfeeds
+from http.client import HTTPConnection
+
 import pytest
-from pytest_docker_tools import container, fetch
+from pytest_docker_tools import build, container
 
-
-hpfeeds_broker_image = fetch('jc2k/hpfeeds3-broker:latest')
-
-hpfeeds_broker = container(
-    image='{hpfeeds_broker_image.id}',
-    environment={
-        'HPFEEDS_TEST_SECRET': 'test',
-        'HPFEEDS_TEST_SUBCHANS': 'test',
-        'HPFEEDS_TEST_PUBCHANS': 'test',
-    },
-    command=[
-        '/app/bin/hpfeeds-broker',
-        '--bind=0.0.0.0:20000',
-        # Read user creds from environment variables
-        '--auth=env',
-    ],
-    ports={
-        '20000/tcp': None,
-    },
+fakedns_image = build(
+    path='examples/resolver-service/dns',
 )
 
-@pytest.fixture(scope='function')
-def hpfeeds_client(hpfeeds_broker):
-    client = hpfeeds.new(
-        '127.0.0.1',
-        hpfeeds_broker.ports['20000/tcp'][0],
-        'test',
-        'test',
-    )
+fakedns = container(
+    image='{fakedns_image.id}',
+    environment={
+        'DNS_EXAMPLE_COM__A': '127.0.0.1',
+    }
+)
 
-    request.addfinalizer(client.close)
-    request.addfinalizer(client.stop)
+apiserver_image = build(
+    path='examples/resolver-service/api',
+)
 
-    return client
+apiserver = container(
+    image='{apiserver_image.id}',
+    ports={
+        '8080/tcp': None,
+    },
+    dns=['{fakedns.ips.primary}']
+)
 
 
-def test_send_message(hpfeeds_client):
-    hpfeeds_client.publish('test', b'DATA DATA DATA')
+@pytest.fixture
+def apiclient(apiserver):
+    port = apiserver.ports['8080/tcp'][0]
+    return HTTPConnection(f'localhost:{port}')
+```
+
+And then reference it from your tests:
+
+```python
+# test_the_test_client.py
+
+import json
+
+
+def test_api_server(apiclient):
+    apiclient.request('GET', '/')
+    response = apiclient.getresponse()
+    assert response.status == 200
+    result = json.loads(response.read())
+    assert result['result'] == '127.0.0.1'
 ```
 
 In this example, any test that uses the `hpfeeds_client` fixture will get a properly configure client connected to a broker running in a Docker container on an ephemeral high port. When the test finishes the client will cleanly disconnect, and the docker container will be thrown away.
@@ -385,50 +396,67 @@ You can define a fixture in your `conftest.py`:
 
 ```python
 # conftest.py
-from pytest_docker_tools import fetch, build, container
 
+from http.client import HTTPConnection
 
-redis_image = fetch('redis:latest')
-api_server_image = build(path='db')
+import pytest
+from pytest_docker_tools import build, container
 
-redis = container(
-    image='{redis_image.id}',
+fakedns_image = build(
+    path='examples/resolver-service/dns',
 )
 
-api_server = container(
-    image='{api_server_image.id}',
+fakedns = container(
+    image='{fakedns_image.id}',
     environment={
-      'DATABASE_IP': '{redis.ips.primary}',
-    },
-    ports={
-      '8080/tcp': None,
+        'DNS_EXAMPLE_COM__A': '127.0.0.1',
     }
 )
+
+apiserver_image = build(
+    path='examples/resolver-service/api',
+)
+
+apiserver = container(
+    image='{apiserver_image.id}',
+    ports={
+        '8080/tcp': None,
+    },
+    dns=['{fakedns.ips.primary}']
+)
+
+
+@pytest.fixture
+def apiclient(apiserver):
+    port = apiserver.ports['8080/tcp'][0]
+    return HTTPConnection(f'localhost:{port}')
 ```
 
-You can then overload these fixtures in your test modules. For example, if redis had a magic replication feature and you want to test for an edge case with your API you could in your `test_magic_rep.py`:
+You can then overload these fixtures in your test modules. For example, if redis had a magic replication feature and you want to test for an edge case with your API you could in your `test_smoketest_alternate.py`:
 
 ```python
-import socket
+# test_smoketest_alternate.py
+
+import json
 
 from pytest_docker_tools import container
 
-
-redis = container(
-  image='{redis_image.id}',
-  environment={
-    'REDIS_MAGIC_REP': '1',
-  }
+fakedns = container(
+    image='{fakedns_image.id}',
+    environment={
+        'DNS_EXAMPLE_COM__A': '192.168.192.168',
+    }
 )
 
-
-def test_magic_rep(api_server):
-    sock = socket.socket()
-    sock.connect(('127.0.0.1', api_server.ports['8080/tcp'][0]))
-    sock.close()
+def test_api_server(apiclient):
+    apiclient.request('GET', '/')
+    response = apiclient.getresponse()
+    assert response.status == 200
+    result = json.loads(response.read())
+    assert result['result'] == '192.168.192.168'
 ```
 
-Here we have redefined the redis container locally in `test_magic_rep.py`. It is able to use the `redis_image` fixture we defined in `conftest.py`. More crucially though, in `test_magic_rep.py` when we use the core `api_server` fixture it actually pulls in the local definition of `redis` and not the one from `conftest.py`! You don't have to redefine anything else. It just works.
+Here we have redefined the fakedns container locally in `test_smoketest_alternate`. It is able to use the `fakedns_image` fixture we defined in `conftest.py`. More crucially though, in `test_smoketest_alternate.py` when we use the core `apiclient` fixture it actually pulls in the local definition of `fakedns` and not the one from `conftest.py`! You don't have to redefine anything else. It just works.
 
 
 #### Injecting fixture configuration through fixtures
@@ -437,51 +465,69 @@ You can pull in normal py.test fixtures from your fixture factory too. This mean
 
 ```python
 # conftest.py
+
+from http.client import HTTPConnection
+
 import pytest
-from pytest_docker_tools import fetch, build, container
+from pytest_docker_tools import build, container
 
-
-redis_image = fetch('redis:latest')
-api_server_image = build(path='db')
-
-redis = container(
-    image='{redis_image.id}',
+fakedns_image = build(
+    path='examples/resolver-service/dns',
 )
 
-api_server = container(
-    image='{api_server_image.id}',
+fakedns = container(
+    image='{fakedns_image.id}',
     environment={
-      'DATABASE_IP': '{redis.ips.primary}',
-      'AUTHENTICATION_BACKEND': '{authentication_backend}'
-    },
-    ports={
-      '8080/tcp': None,
+        'DNS_EXAMPLE_COM__A': '{example_com_a}',
     }
 )
 
+apiserver_image = build(
+    path='examples/resolver-service/api',
+)
+
+apiserver = container(
+    image='{apiserver_image.id}',
+    ports={
+        '8080/tcp': None,
+    },
+    dns=['{fakedns.ips.primary}']
+)
+
 
 @pytest.fixture
-def authentication_backend():
-    return 'memory'
+def apiclient(apiserver):
+    port = apiserver.ports['8080/tcp'][0]
+    return HTTPConnection(f'localhost:{port}')
+
+
+@pytest.fixture
+def example_com_a():
+    return '127.0.0.1'
+
 ```
 
-Your test can now inject a different authentication backend by overloading the `authentication_backend` fixture in your 'test_auth_sqlite.py' module:
+When a test uses the apiclient fixture now they will get the fakedns container configured as normal. However you can redefine the fixture in your test module - and the other fixtures will still respect it. For example:
 
 ```python
-import socket
+# test_smoketest_alternate.py
+
+import json
 
 import pytest
 
 
 @pytest.fixture
-def authentication_backend():
-    return 'sqlite'
+def example_com_a():
+    return '192.168.192.168'
 
 
-def test_magic_rep(api_server):
-    sock = socket.socket()
-    sock.connect(('127.0.0.1', api_server.ports['8080/tcp'][0]))
-    sock.close()
+def test_api_server(apiclient):
+    apiclient.request('GET', '/')
+    response = apiclient.getresponse()
+    assert response.status == 200
+    result = json.loads(response.read())
+    assert result['result'] == '192.168.192.168'
 ```
 
 Your `api_server` container (and its `redis` backend) will be built as normal, only in this one test module it will use its sqlite backend.
@@ -489,54 +535,76 @@ Your `api_server` container (and its `redis` backend) will be built as normal, o
 
 ### Fixture parameterisation
 
-You can create parameterisation fixtures. Perhaps you wan to run all your `api_server` tests against both of your authentication backends. In your `conftest.py`:
+You can create parameterisation fixtures. Perhaps you wan to run all your `api_server` tests against both of your authentication backends. Perhaps you have a fake that you want to test multiple configurations of.
+
+In your `conftest.py`:
 
 ```python
 # conftest.py
+
+from http.client import HTTPConnection
+
 import pytest
-from pytest_docker_tools import fetch, build, container
+from pytest_docker_tools import build, container
 
-
-redis_image = fetch('redis:latest')
-api_server_image = build(path='db')
-
-redis = container(
-    image='{redis_image.id}',
+fakedns_image = build(
+    path='examples/resolver-service/dns',
 )
 
-api_server_memory = container(
-    image='{api_server_image.id}',
+fakedns_localhost = container(
+    image='{fakedns_image.id}',
     environment={
-      'DATABASE_IP': '{redis.ips.primary}',
-      'AUTHENTICATION_BACKEND': 'memory'
-    },
-    ports={
-      '8080/tcp': None,
+        'DNS_EXAMPLE_COM__A': '127.0.0.1',
     }
 )
 
-api_server_sqlite = container(
-    image='{api_server_image.id}',
+fakedns_alternate = container(
+    image='{fakedns_image.id}',
     environment={
-      'DATABASE_IP': '{redis.ips.primary}',
-      'AUTHENTICATION_BACKEND': 'sqlite'
-    },
-    ports={
-      '8080/tcp': None,
+        'DNS_EXAMPLE_COM__A': '192.168.192.168',
     }
 )
 
+@pytest.fixture(scope='function', params=['fakedns_localhost', 'fakedns_alternate'])
+def fakedns(request):
+      return request.getfixturevalue(request.param)
 
-@pytest.fixture(scope='function', params=['api_server_memory', 'api_server_sqlite'])
-def apiserver(request):
-    return request.getfixturevalue(request.param)
+apiserver_image = build(
+    path='examples/resolver-service/api',
+)
+
+apiserver = container(
+    image='{apiserver_image.id}',
+    ports={
+        '8080/tcp': None,
+    },
+    dns=['{fakedns.ips.primary}']
+)
+
+
+@pytest.fixture
+def apiclient(apiserver):
+    port = apiserver.ports['8080/tcp'][0]
+    return HTTPConnection(f'localhost:{port}')
 ```
 
-Then in your test:
+The test is largely the same as the first example, only now it will be tested against 2 different fake configurations.
+
+The one small difference is that at the moment you have to pass the `fakedns` fixture to the test - this is so the test loader knows to schedule multiple invocations of the test.
 
 ```python
-def test_list_users(apiserver):
-    pass
+# test_smoketest.py
+
+import ipaddress
+import json
+
+
+def test_api_server(fakedns, apiclient):
+    apiclient.request('GET', '/')
+    response = apiclient.getresponse()
+    assert response.status == 200
+    result = json.loads(response.read())
+    ipaddress.ip_address(result['result'])
 ```
 
 This test will be invoked twice - once against the memory backend, and once against the sqlite backend.

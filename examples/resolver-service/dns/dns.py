@@ -24,11 +24,11 @@ class Resolver(BaseResolver):
         name = str(request.q.qname).strip('.').replace('.', '_').upper()
         rec_type = QTYPE[request.q.qtype]
         environ_key = f'DNS_{name}__{rec_type}'
-        print(environ_key)
+
         for glob, value in os.environ.items():
             if not glob.startswith('DNS_'):
                 continue
-            print(environ_key, glob)
+
             if fnmatch.fnmatch(environ_key, glob):
                 return value
 
