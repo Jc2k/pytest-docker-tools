@@ -334,6 +334,7 @@ Complicated environments can be defined with fixture factories. They form a dire
 You can define a fixture in your `conftest.py`:
 
 ```python
+# conftest.py
 from pytest_docker_tools import fetch, build, container
 
 
@@ -385,6 +386,7 @@ Here we have redefined the redis container locally in `test_magic_rep.py`. It is
 You can pull in normal py.test fixtures from your fixture factory too. This means we can use fixture overloading and pass in config. In your `conftest.py`:
 
 ```python
+# conftest.py
 import pytest
 from pytest_docker_tools import fetch, build, container
 
@@ -440,6 +442,7 @@ Your `api_server` container (and its `redis` backend) will be built as normal, o
 You can create parameterisation fixtures. Perhaps you wan to run all your `api_server` tests against both of your authentication backends. In your `conftest.py`:
 
 ```python
+# conftest.py
 import pytest
 from pytest_docker_tools import fetch, build, container
 
