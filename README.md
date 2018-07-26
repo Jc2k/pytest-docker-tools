@@ -12,45 +12,56 @@ You have written a software application (in any language) and have packaged in a
 
 The main interface provided by this library is a set of 'fixture factories'. It provides a 'best in class' implementation of a fixture, and then allows you to treat it as a template - injecting your own configuration declaratively. You can define your fixtures in your `conftest.py` and access them from all your tests, and you can override them as needed in individual test modules.
 
-The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice with a redis backend:
+The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice and wanted to point its DNS and a mock DNS server:
 
 ```python
 # conftest.py
 
-from pytest_docker_tools import fetch, build, volume, container
+from http.client import HTTPConnection
 
-my_image = fetch('redis:latest')
+import pytest
+from pytest_docker_tools import build, container
 
-my_image_2 = build(
-  path='db'
+fakedns_image = build(
+    path='examples/resolver-service/dns',
 )
 
-my_data = volume()
-
-my_microservice_backend = container(
-    image='{my_image.id}',
-    volumes={
-      '{my_data.id}': {'bind': '/var/tmp'},
-    }
-)
-
-my_microservice = container(
-    image='{my_image_2.id}',
+fakedns = container(
+    image='{fakedns_image.id}',
     environment={
-      'DATABASE_IP': '{mydatabase.ips.primary}',
-    },
-    ports={
-      '3679/tcp': None,
+        'DNS_EXAMPLE_COM__A': '127.0.0.1',
     }
 )
+
+apiserver_image = build(
+    path='examples/resolver-service/api',
+)
+
+apiserver = container(
+    image='{apiserver_image.id}',
+    ports={
+        '8080/tcp': None,
+    },
+    dns=['{fakedns.ips.primary}']
+)
+
+
+@pytest.fixture
+def apiclient(apiserver):
+    port = apiserver.ports['8080/tcp'][0]
+    return HTTPConnection(f'localhost:{port}')
 ```
 
 You can now create a test that exercises your microservice:
 
 ```python
-def test_my_frobulator(my_microservice):
-    socket = socket.socket()
-    socket.connect('127.0.0.1', my_microservice.ports['3679/tcp'][0])
+# test_smoketest.py
+
+import socket
+
+def test_my_frobulator(apiserver):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', apiserver.ports['8080/tcp'][0]))
 ```
 
 In this example all the dependencies will be resolved in order and once per session:
@@ -67,6 +78,21 @@ Then once per test:
 The test can then run and access the container via its ephemeral high port. At the end of the test the environment will be thrown away.
 
 If the test fails the `docker logs` output from each container will be captured and added to the test output.
+
+In the example you'll notice we defined an `apiclient` fixture. Of course if you use that it will implicitly pull in both of the server fixtures and 'just work':
+
+```python
+# test_smoketest.py
+
+import json
+
+
+def test_api_server(apiclient):
+    apiclient.request('GET', '/')
+    response = apiclient.getresponse()
+    assert response.status == 200
+    assert json.loads(response.read()) == {'result': '127.0.0.1'}
+```
 
 
 ## Parallelism
@@ -136,8 +162,12 @@ For example:
 ```python
 from pytest_docker_tools import container, fetch
 
-my_microservice_backend_image = fetch('redis:latest')
-my_microservice_backend = container(image='{my_microservice_backend_image.id}')
+redis_image = fetch('redis:latest')
+redis = container(image='{redis_image.id}')
+
+
+def test_container_starts(redis):
+    assert redis.status == "running"
 ```
 
 This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled. Note that if you don't use `build` or `fetch` to prepare a Docker image then the tag or hash that you specify must already exist on the host where you are running the tests. There is no implicit fetching of Docker images.
@@ -147,24 +177,39 @@ The container will be automatically deleted after the test has finished.
 
 #### Ip Addresses
 
-If your container is only attached to a single network you can get its Ip address through a helper property on the container object:
+If your container is only attached to a single network you can get its Ip address through a helper property. Given this environment:
 
 ```python
-from pytest_docker_tools import container
+# conftest.py
 
-my_service = container(
-  image='{my_image.id}',
+from pytest_docker_tools import container, fetch, network
+
+redis_image = fetch('redis:latest')
+backend_network = network()
+
+redis = container(
+  image='{redis_image.id}',
+  network='{backend_network.name}',
 )
+```
 
-def test_get_service_ip(my_service):
-    print(my_service.ips.primary)
+You can access the IP via the container helper:
+
+```python
+import ipaddress
+
+def test_get_service_ip(redis):
+    # This will raise a ValueError if not a valid ip
+    ipaddress.ip_address(redis.ips.primary)
 ```
 
 If you want to look up its ip address by network you can also access it more specifically:
 
 ```python
-def test_get_service_ip(my_network, my_service):
-    print(my_service.ips[my_network])
+import ipaddress
+
+def test_get_service_ip(backend_network, redis):
+    ipaddress.ip_address(redis.ips[backend_network])
 ```
 
 #### Ports
@@ -172,19 +217,21 @@ def test_get_service_ip(my_network, my_service):
 The factory takes the same port arguments as the official Python Docker API. We recommend using the ephemeral high ports syntax:
 
 ```python
+# conftest.py
+
 from pytest_docker_tools import container
 
-my_service = container(
-  image='{my_image.id}',
-  ports={'3275/tcp': None}
+apiserver = container(
+  image='{apiserver_image.id}',
+  ports={'8080/tcp': None}
 )
 ```
 
-Docker will map port 3275 in the container to a random port on your host. In order to access it from your tests you can get the bound port from the container instance:
+Docker will map port 8080 in the container to a random port on your host. In order to access it from your tests you can get the bound port from the container instance:
 
 ```python
-def test_connect_my_service(my_service):
-    print(my_service.ports['3275/tcp'][0])
+def test_connect_my_service(apiserver):
+    assert my_service.ports['8080/tcp'][0] != 8080
 ```
 
 
@@ -193,6 +240,9 @@ def test_connect_my_service(my_service):
 You can inspect the logs of your container with the logs method:
 
 ```python
+redis_image = fetch('redis:latest')
+redis = container(image='{redis_image.id}')
+
 def test_logs(my_redis_service):
     assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in my_redis_service.logs()
 ```

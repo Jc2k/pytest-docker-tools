@@ -58,7 +58,7 @@ class PortMap(_Map):
         if not ports[key]:
             return []
 
-        return [p['HostPort'] for p in ports[key]]
+        return [int(p['HostPort']) for p in ports[key]]
 
 
 class Container(object):
