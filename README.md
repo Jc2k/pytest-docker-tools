@@ -106,7 +106,7 @@ Here is a bare minimum example that just tests creating and destroying 100 insta
 import pytest
 from pytest_docker_tools import container, fetch
 
-my_redis_image = fetch(tag='redis:latest')
+my_redis_image = fetch(repository='redis:latest')
 
 my_redis = container(
     image='{my_redis_image.id}',
@@ -162,7 +162,7 @@ For example:
 ```python
 from pytest_docker_tools import container, fetch
 
-redis_image = fetch(tag='redis:latest')
+redis_image = fetch(repository='redis:latest')
 redis = container(image='{redis_image.id}')
 
 
@@ -184,7 +184,7 @@ If your container is only attached to a single network you can get its Ip addres
 
 from pytest_docker_tools import container, fetch, network
 
-redis_image = fetch(tag='redis:latest')
+redis_image = fetch(repository='redis:latest')
 backend_network = network()
 
 redis = container(
@@ -243,7 +243,7 @@ You can inspect the logs of your container with the logs method:
 from pytest_docker_tools import container, fetch
 
 
-redis_image = fetch(tag='redis:latest')
+redis_image = fetch(repository='redis:latest')
 redis = container(image='{redis_image.id}')
 
 def test_logs(redis):
@@ -258,7 +258,7 @@ To pull an image from your default repository use the `fetch` fixture factory. T
 ```python
 from pytest_docker_tools import build, fetch
 
-my_image = fetch(tag='redis:latest')
+my_image = fetch(repository='redis:latest')
 
 my_image_2 = build(
   path='db'
