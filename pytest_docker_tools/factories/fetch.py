@@ -9,7 +9,7 @@ def fetch(request, docker_client, **kwargs):
 
     sys.stdout.write(f'Fetching {kwargs["tag"]}\n')
 
-    image = docker_client.images.pull(kwargs['tag'])
+    image = docker_client.images.pull(**kwargs)
     # request.addfinalizer(lambda: docker_client.images.remove(image.id))
 
     return image

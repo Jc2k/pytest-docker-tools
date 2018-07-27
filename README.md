@@ -265,6 +265,8 @@ my_image_2 = build(
 )
 ```
 
+The `build` fixture factory supports all parameters that can be passed to the docker-py `build` method. See [here](https://docker-py.readthedocs.io/en/stable/images.html#docker.models.images.ImageCollection.build) for them all. The `fetch` fixture factory supports all parameters that can be passed to the docker-py `pull` method. See [here](https://docker-py.readthedocs.io/en/stable/images.html#docker.models.images.ImageCollection.pull) for them all.
+
 The default scope for this factory is `session`. This means the fixture will only build or fetch once per py.test invocation. The fixture will not be triggered until a test (or other fixture) tries to use it. This means you won't waste time building an image if you aren't running the test that uses it.
 
 
@@ -277,6 +279,8 @@ from pytest_docker_tools import network
 
 frontend_network = network()
 ```
+
+The `network` fixture factory supports all parameters that can be passed to the docker-py network `create` method. See [here](https://docker-py.readthedocs.io/en/stable/networks.html#docker.models.networks.NetworkCollection.create) for them all.
 
 The default scope for this factory is `function`. This means a new network will be created for each test that is executed.
 
@@ -292,6 +296,8 @@ from pytest_docker_tools import volume
 
 backend_storage = volume()
 ```
+
+The `volume` fixture factory supports all parameters that can be passed to the docker-py volume `create` method. See [here](https://docker-py.readthedocs.io/en/stable/volumes.html#docker.models.volumes.VolumeCollection.create) for them all.
 
 The default scope for this factory is `function`. This means a new volume will be created for each test that is executed. The volume will be removed after the test using it has finished.
 

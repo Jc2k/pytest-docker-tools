@@ -10,9 +10,7 @@ def build(request, docker_client, **kwargs):
     sys.stdout.write(f'Building {kwargs["path"]}')
 
     try:
-        image, logs = docker_client.images.build(
-            path=kwargs["path"],
-        )
+        image, logs = docker_client.images.build(**kwargs)
 
         for line in logs:
             sys.stdout.write('.')
