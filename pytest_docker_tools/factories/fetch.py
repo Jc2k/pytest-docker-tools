@@ -1,31 +1,15 @@
 import sys
 
-import pytest
+from pytest_docker_tools.builder import fixture_factory
 
 
-def fetch(tag, scope='session'):
-    '''
-    Fixture factory for fetching container images from a repository. For example
-    in your conftest.py you can:
+@fixture_factory(scope='session')
+def fetch(request, docker_client, **kwargs):
+    ''' Docker image: Fetched from {tag} '''
 
-        from pytest_docker_tools import factories
+    sys.stdout.write(f'Fetching {kwargs["tag"]}\n')
 
-        factories.repository_image('test_image', 'redis:latest')
+    image = docker_client.images.pull(kwargs['tag'])
+    # request.addfinalizer(lambda: docker_client.images.remove(image.id))
 
-    By default the fixture has a session scope.
-    '''
-
-    if ':' not in tag:
-        tag += ':latest'
-
-    def fetch(request, docker_client):
-        sys.stdout.write(f'Fetching {tag}\n')
-
-        image = docker_client.images.pull(tag)
-        # request.addfinalizer(lambda: docker_client.images.remove(image.id))
-
-        return image
-
-    pytest.fixture(scope=scope)(fetch)
-
-    return fetch
+    return image

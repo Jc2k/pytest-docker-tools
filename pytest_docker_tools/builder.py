@@ -7,7 +7,7 @@ from .templates import find_fixtures_in_params, resolve_fixtures_in_params
 
 def build_fixture_function(callable, kwargs):
     name = callable.__name__
-    docstring = getattr(callable, '__doc__', '')
+    docstring = getattr(callable, '__doc__', '').format(**kwargs)
     fixtures = find_fixtures_in_params(kwargs).union(set(('request', 'docker_client')))
     fixtures_str = ','.join(fixtures)
 
@@ -28,9 +28,13 @@ def build_fixture_function(callable, kwargs):
     return globals[name]
 
 
-def fixture_factory(callable):
-    def factory(*, scope='function', **kwargs):
-        fixture_factory = build_fixture_function(callable, kwargs)
-        pytest.fixture(scope=scope)(fixture_factory)
-        return fixture_factory
-    return factory
+def fixture_factory(scope='function'):
+    def inner(callable):
+        def factory(*, scope='function', **kwargs):
+            fixture_factory = build_fixture_function(callable, kwargs)
+            pytest.fixture(scope=scope)(fixture_factory)
+            return fixture_factory
+        factory.__name__ = callable.__name__
+        factory.__doc__ = getattr(callable, '__doc__', '')
+        return factory
+    return inner

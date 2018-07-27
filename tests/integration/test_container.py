@@ -1,6 +1,6 @@
 from pytest_docker_tools import container, fetch
 
-test_container_1_image = fetch('redis')
+test_container_1_image = fetch(tag='redis:latest')
 
 test_container_1 = container(
     image='{test_container_1_image.id}',

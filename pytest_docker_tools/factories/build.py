@@ -1,41 +1,26 @@
 import sys
 
-import pytest
+from pytest_docker_tools.builder import fixture_factory
 
 
-def build(*, path, scope='session'):
-    '''
-    Fixture factory for creating container images from a Dockerfile. For example
-    in your conftest.py you can:
+@fixture_factory(scope='session')
+def build(request, docker_client, **kwargs):
+    ''' Docker image: built from "{path}" '''
 
-        from pytest_docker_tools import build
+    sys.stdout.write(f'Building {kwargs["path"]}')
 
-        test_image = build(path='path/to/buildcontext')
+    try:
+        image, logs = docker_client.images.build(
+            path=kwargs["path"],
+        )
 
-    Where the path is a folder containing a Dockerfile.
+        for line in logs:
+            sys.stdout.write('.')
+            sys.stdout.flush()
 
-    By default the fixture has a session scope.
-    '''
+    finally:
+        sys.stdout.write('\n')
 
-    def build(request, docker_client):
-        sys.stdout.write(f'Building {path}')
+    # request.addfinalizer(lambda: docker_client.images.remove(image.id))
 
-        try:
-            image, logs = docker_client.images.build(
-                path=path
-            )
-
-            for line in logs:
-                sys.stdout.write('.')
-                sys.stdout.flush()
-
-        finally:
-            sys.stdout.write('\n')
-
-        # request.addfinalizer(lambda: docker_client.images.remove(image.id))
-
-        return image
-
-    pytest.fixture(scope=scope)(build)
-
-    return build
+    return image

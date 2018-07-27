@@ -3,9 +3,9 @@ from pytest_docker_tools.utils import wait_for_callable
 from pytest_docker_tools.wrappers import Container
 
 
-@fixture_factory
+@fixture_factory()
 def container(request, docker_client, **kwargs):
-    ''' Docker container: image={kwargs['image']} '''
+    ''' Docker container: image={image} '''
 
     kwargs.update({'detach': True})
 

@@ -7,7 +7,7 @@ right order.
 
 from pytest_docker_tools import build, container, fetch, network, volume
 
-redis_image = fetch('redis:latest')
+redis_image = fetch(tag='redis:latest')
 
 redis0 = container(
     image='{redis_image.id}',

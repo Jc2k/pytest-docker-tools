@@ -6,6 +6,7 @@ from .wrappers import Container
 
 @pytest.fixture(scope='session')
 def docker_client(request):
+    ''' A Docker client configured from environment variables '''
     return docker.from_env()
 
 
