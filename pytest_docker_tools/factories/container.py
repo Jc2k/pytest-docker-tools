@@ -1,4 +1,5 @@
 import inspect
+import textwrap
 from string import Formatter
 
 import pytest
@@ -43,7 +44,7 @@ class FixtureCollector(object):
             yield from self.visit_value(value)
 
     def get_fixtures_from_params(self, kwargs):
-        return tuple(set(self.visit(kwargs)))
+        return set(self.visit(kwargs))
 
 
 class ConstructorRenderer(object):
@@ -82,6 +83,22 @@ class FixtureFormatter(Formatter):
         return self.request.getfixturevalue(key)
 
 
+def build_fixture_function(name, docstring, fixtures, callable):
+    fixtures_str = ','.join(fixtures)
+    template = textwrap.dedent(f'''
+    def {name}({fixtures_str}):
+        \'\'\'
+        {docstring}
+        \'\'\'
+        return _{name}(request, docker_client)
+    ''')
+    globals = {
+        f'_{name}': callable,
+    }
+    exec(template, globals)
+    return globals[name]
+
+
 def container(*, scope='function', **kwargs):
     '''
     Fixture factory for creating containers. For example in your conftest.py
@@ -110,8 +127,14 @@ def container(*, scope='function', **kwargs):
 
         return container
 
-    pytest.fixture(scope=scope)(container)
+    fixtures = FixtureCollector().get_fixtures_from_params(kwargs).union(set(('request', 'docker_client')))
 
-    # pytest.mark.usefixtures(*FixtureCollector().get_fixtures_from_params(kwargs))(container)
+    container = build_fixture_function(
+        'container',
+        f'Docker container; image={kwargs["image"]}',
+        fixtures,
+        container
+    )
+    pytest.fixture(scope=scope)(container)
 
     return container

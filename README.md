@@ -588,9 +588,7 @@ def apiclient(apiserver):
     return HTTPConnection(f'localhost:{port}')
 ```
 
-The test is largely the same as the first example, only now it will be tested against 2 different fake configurations.
-
-The one small difference is that at the moment you have to pass the `fakedns` fixture to the test - this is so the test loader knows to schedule multiple invocations of the test.
+The test is the same as the first example, only now it will be tested against 2 different fake configurations.
 
 ```python
 # test_smoketest.py
@@ -599,7 +597,7 @@ import ipaddress
 import json
 
 
-def test_api_server(fakedns, apiclient):
+def test_api_server( apiclient):
     apiclient.request('GET', '/')
     response = apiclient.getresponse()
     assert response.status == 200
