@@ -299,6 +299,41 @@ backend_storage = volume()
 
 The `volume` fixture factory supports all parameters that can be passed to the docker-py volume `create` method. See [here](https://docker-py.readthedocs.io/en/stable/volumes.html#docker.models.volumes.VolumeCollection.create) for them all.
 
+In addition you can specify a `initial_content` dictionary. This allows you to seed a volume with a small set of initial state. In the following example we'll preseed a minio service with 2 buckets and 1 object in 1 of those buckets.
+
+```python
+from pytest_docker_tools import container, fetch, volume
+
+
+minio_image = fetch(repository='minio/minio:latest')
+
+minio_volume = volume(
+    initial_content={
+        'bucket-1': None,
+        'bucket-2/example.txt': b'Test file 1',
+    }
+)
+
+minio = container(
+    image='{minio_image.id}',
+    command=['server', '/data'],
+    volumes={
+        '{minio_volume.name}': {'bind': '/data'},
+    },
+    environment={
+        'MINIO_ACCESS_KEY': 'minio',
+        'MINIO_SECRET_KEY': 'minio123',
+    },
+)
+
+def test_volume_is_seeded(minio):
+    files = minio.get_files('/data')
+    assert files['data/bucket-2/example.txt'] == b'Test file 1'
+    assert files['data/bucket-1'] == None
+```
+
+The `minio_volume` container will be created with an empty folder (`bucket-1`) and a text file called `example.txt` in a seperate folder called `bucket-2`.
+
 The default scope for this factory is `function`. This means a new volume will be created for each test that is executed. The volume will be removed after the test using it has finished.
 
 

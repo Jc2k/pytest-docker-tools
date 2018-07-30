@@ -149,11 +149,20 @@ class Container(object):
         files = {}
         for info in archive.getmembers():
             if not info.isfile():
+                files[info.name] = None
                 continue
             reader = archive.extractfile(info.name)
-            files[info.name] = reader.read().decode('utf-8')
+            files[info.name] = reader.read()
 
         return files
+
+    def get_text(self, path):
+        text = {}
+        for path, bytes in self.get_files(path):
+            if bytes is None:
+                text[path] = None
+                continue
+            text[path] = bytes.decode('utf-8')
 
     def get_open_tcp_ports(self):
         ''' Gets all TCP sockets in the LISTEN state '''
