@@ -7,6 +7,10 @@ from pytest_docker_tools.builder import fixture_factory
 def build(request, docker_client, **kwargs):
     ''' Docker image: built from "{path}" '''
 
+    # The docker build command now defaults to --rm=true, but docker-py doesnt
+    # Let's do what docker build does by default
+    kwargs.setdefault('rm', True)
+
     sys.stdout.write(f'Building {kwargs["path"]}')
 
     try:
