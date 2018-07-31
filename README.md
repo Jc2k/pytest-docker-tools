@@ -95,6 +95,93 @@ def test_api_server(apiclient):
 ```
 
 
+## Scope
+
+All of the fixture factories take the `scope` keyword. Fixtures created with these factories will behave like any py.test fixture with that scope.
+
+In this example we create a memcache that is `session` scoped and another that is `module` scoped.
+
+```python
+# conftest.py
+
+from pytest_docker_tools import container, fetch
+
+memcache_image = fetch(repository='memcached:latest')
+
+memcache_session = container(
+    image='{memcache_image.id}',
+    scope='session',
+    ports={
+        '11211/tcp': None,
+    },
+)
+
+memcache_module = container(
+    image='{memcache_image.id}',
+    scope='module',
+    ports={
+        '11211/tcp': None,
+    },
+)
+```
+
+When `test_scope_1.py` runs neither container is running so a new instance of each is started. Their scope is longer than a single `function` so they are kept alive for the next test that needs them.
+
+```python
+# test_scope_1.py
+
+import socket
+
+def test_session_1(memcache_session):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', memcache_session.ports['11211/tcp'][0]))
+    sock.sendall(b'set mykey 0 600 4\r\ndata\r\n')
+    sock.close()
+
+def test_session_2(memcache_session):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', memcache_session.ports['11211/tcp'][0]))
+    sock.sendall(b'get mykey\r\n')
+    assert sock.recv(1024) == b'VALUE mykey 0 4\r\ndata\r\nEND\r\n'
+    sock.close()
+
+def test_module_1(memcache_module):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', memcache_module.ports['11211/tcp'][0]))
+    sock.sendall(b'set mykey 0 600 4\r\ndata\r\n')
+    sock.close()
+
+def test_module_2(memcache_module):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', memcache_module.ports['11211/tcp'][0]))
+    sock.sendall(b'get mykey\r\n')
+    assert sock.recv(1024) == b'VALUE mykey 0 4\r\ndata\r\nEND\r\n'
+    sock.close()
+```
+
+When `test_scope_2.py` runs the `session` scoped container is still running, so it will be reused. But we are now in a new module now so the `module` scoped container will have been destroyed. A new empty instance will be created.
+
+```python
+# test_scope_2.py
+
+import socket
+
+def test_session_3(memcache_session):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', memcache_session.ports['11211/tcp'][0]))
+    sock.sendall(b'get mykey\r\n')
+    assert sock.recv(1024) == b'VALUE mykey 0 4\r\ndata\r\nEND\r\n'
+    sock.close()
+
+def test_module_3(memcache_module):
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', memcache_module.ports['11211/tcp'][0]))
+    sock.sendall(b'get mykey\r\n')
+    assert sock.recv(1024) == b'END\r\n'
+    sock.close()
+```
+
+
 ## Parallelism
 
 Integration and smoke tests are often slow, but a lot of time is spent waiting. So running tests in parallel is a great way to speed them up. `pytest-docker-tools` avoids creating resource names that could collide. It also makes it easy to not care what port your service is bound to. This means its a great fit for use with `pytest-xdist`.
