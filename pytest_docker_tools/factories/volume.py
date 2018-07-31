@@ -42,7 +42,7 @@ def _populate_volume(docker_client, volume, seeds):
 
 
 @fixture_factory()
-def volume(request, docker_client, **kwargs):
+def volume(request, docker_client, wrapper_class, **kwargs):
     ''' Docker volume '''
 
     name = kwargs.pop('name', 'pytest-{uuid}').format(uuid=str(uuid.uuid4()))
@@ -55,4 +55,5 @@ def volume(request, docker_client, **kwargs):
     if seeds:
         _populate_volume(docker_client, volume, seeds)
 
-    return volume
+    wrapper_class = wrapper_class or (lambda volume: volume)
+    return wrapper_class(volume)

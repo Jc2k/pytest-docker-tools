@@ -69,6 +69,8 @@ class Container(object):
         self.ports = PortMap(container)
 
     def ready(self):
+        self._container.reload()
+
         if self.status == 'exited':
             raise RuntimeError(f'Container {self.name} has already exited before we noticed it was ready')
 

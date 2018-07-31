@@ -725,7 +725,7 @@ import ipaddress
 import json
 
 
-def test_api_server( apiclient):
+def test_api_server(apiclient):
     apiclient.request('GET', '/')
     response = apiclient.getresponse()
     assert response.status == 200
@@ -734,3 +734,73 @@ def test_api_server( apiclient):
 ```
 
 This test will be invoked twice - once against the memory backend, and once against the sqlite backend.
+
+
+### Fixture wrappers
+
+You can wrap your fixtures with a `wrapper_class`. This allows you to add helper methods to fixtures for use in your tests. In the case of the `container` fixture factory you can also implement `ready()` to add additional container readyness checks.
+
+In previous tests we've created an entire test client fixture. With `wrapper_class` we could hang this convenience method off the fixture itself instead:
+
+```python
+# test_fixture_wrappers.py
+
+import ipaddress
+import json
+import random
+
+from http.client import HTTPConnection
+
+import pytest
+from pytest_docker_tools import build, container
+from pytest_docker_tools import wrappers
+
+
+class Container(wrappers.Container):
+
+    def ready(self):
+        # This is called until it returns True - its a great hook for e.g.
+        # waiting until a log message appears or a pid file is created etc
+        if super().ready():
+            return random.choice([True, False])
+        return False
+
+    def client(self):
+        port = self.ports['8080/tcp'][0]
+        return HTTPConnection(f'localhost:{port}')
+
+
+fakedns_image = build(
+    path='examples/resolver-service/dns',
+)
+
+fakedns = container(
+    image='{fakedns_image.id}',
+    environment={
+        'DNS_EXAMPLE_COM__A': '127.0.0.1',
+    }
+)
+
+apiserver_image = build(
+    path='examples/resolver-service/api',
+)
+
+apiserver = container(
+    image='{apiserver_image.id}',
+    ports={
+        '8080/tcp': None,
+    },
+    dns=['{fakedns.ips.primary}'],
+    wrapper_class=Container,
+)
+
+
+def test_container_wrapper_class(apiserver):
+    client = apiserver.client()
+    client.request('GET', '/')
+    response = client.getresponse()
+    assert response.status == 200
+    result = json.loads(response.read())
+    ipaddress.ip_address(result['result'])
+
+```

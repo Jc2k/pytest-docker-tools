@@ -4,7 +4,7 @@ from pytest_docker_tools.builder import fixture_factory
 
 
 @fixture_factory(scope='session')
-def build(request, docker_client, **kwargs):
+def build(request, docker_client, wrapper_class, **kwargs):
     ''' Docker image: built from "{path}" '''
 
     # The docker build command now defaults to --rm=true, but docker-py doesnt
@@ -25,4 +25,5 @@ def build(request, docker_client, **kwargs):
 
     # request.addfinalizer(lambda: docker_client.images.remove(image.id))
 
-    return image
+    wrapper_class = wrapper_class or (lambda image: image)
+    return wrapper_class(image)
