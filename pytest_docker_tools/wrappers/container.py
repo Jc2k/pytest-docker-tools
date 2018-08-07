@@ -160,7 +160,7 @@ class Container(object):
 
     def get_text(self, path):
         text = {}
-        for path, bytes in self.get_files(path):
+        for path, bytes in self.get_files(path).items():
             if bytes is None:
                 text[path] = None
                 continue
