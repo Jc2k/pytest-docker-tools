@@ -165,6 +165,7 @@ class Container(object):
                 text[path] = None
                 continue
             text[path] = bytes.decode('utf-8')
+        return text
 
     def get_open_tcp_ports(self):
         ''' Gets all TCP sockets in the LISTEN state '''
