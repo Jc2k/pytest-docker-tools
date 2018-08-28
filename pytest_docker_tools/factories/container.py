@@ -1,4 +1,5 @@
 from pytest_docker_tools.builder import fixture_factory
+from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
 from pytest_docker_tools.utils import wait_for_callable
 from pytest_docker_tools.wrappers import Container
 
@@ -15,6 +16,9 @@ def container(request, docker_client, wrapper_class, **kwargs):
     wrapper_class = wrapper_class or Container
     container = wrapper_class(raw_container)
 
-    wait_for_callable('Waiting for container to be ready', container.ready)
+    try:
+        wait_for_callable('Waiting for container to be ready', container.ready)
+    except TimeoutError:
+        raise ContainerNotReady(container, 'Timeout while waiting for container to be ready')
 
     return container

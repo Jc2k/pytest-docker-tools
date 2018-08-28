@@ -1,6 +1,7 @@
 import docker
 import pytest
 
+from .exceptions import ContainerError
 from .wrappers import Container
 
 
@@ -22,6 +23,10 @@ def pytest_runtest_makereport(item, call):
 
     if not rep.failed:
         return
+
+    if call.excinfo and isinstance(call.excinfo.value, ContainerError):
+        container = call.excinfo.value._container
+        rep.sections.append((container.name, container.logs()))
 
     if 'request' not in item.funcargs:
         return

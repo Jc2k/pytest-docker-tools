@@ -1,6 +1,8 @@
 import sys
 import time
 
+from .exceptions import TimeoutError
+
 
 def wait_for_callable(message, callable, timeout=30):
     '''
@@ -19,4 +21,4 @@ def wait_for_callable(message, callable, timeout=30):
     finally:
         sys.stdout.write('\n')
 
-    raise RuntimeError('Timeout exceeded')
+    raise TimeoutError(f'Timeout of {timeout}s exceeded')

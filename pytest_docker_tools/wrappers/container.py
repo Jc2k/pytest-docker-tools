@@ -6,6 +6,8 @@ object that are useful for integration testing.
 import io
 import tarfile
 
+from pytest_docker_tools.exceptions import ContainerFailed
+
 
 class _Map(object):
 
@@ -72,7 +74,7 @@ class Container(object):
         self._container.reload()
 
         if self.status == 'exited':
-            raise RuntimeError(f'Container {self.name} has already exited before we noticed it was ready')
+            raise ContainerFailed(self, f'Container {self.name} has already exited before we noticed it was ready')
 
         if self.status != 'running':
             return False
