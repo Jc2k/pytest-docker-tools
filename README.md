@@ -479,6 +479,29 @@ def test_image(image):
 ```
 
 
+### Network differences between dev env and CI
+
+Another common difference between your dev environment and your CI environment might be that your tests end up running in Docker on your CI. If you bind-mount your `docker.sock` then your tests might end up running on the same container network as the containers you are testing, and unable to access any port you are mapping to the host box. In otherwords:
+
+ * On your dev machine your tests might access locahost:8000 to access your test instance (ports mapped to host)
+ * On your CI machine they might need to access 172.16.0.5:8000 to access your test instance
+
+The container object has a `get_addr` helper which will return the right thing depending on the environment it is in.
+
+```python
+from pytest_docker_tools import container
+
+apiserver = container(
+  image='{apiserver_image.id}',
+  ports={'8080/tcp': None}
+)
+
+def test_connect_my_service(apiserver):
+    ip, port = apiserver.get_addr('8080/tcp')
+    # ... connect to ip:port ...
+```
+
+
 ### Client fixtures
 
 You will probably want to create an API client for the service you are testing. Although we've already done this in the README, its worth calling it out. You can define a client fixture, have it depend on your docker containers, and then only have to reference the client from your tests.

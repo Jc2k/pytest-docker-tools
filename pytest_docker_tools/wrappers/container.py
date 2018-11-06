@@ -7,6 +7,7 @@ import io
 import tarfile
 
 from pytest_docker_tools.exceptions import ContainerFailed
+from pytest_docker_tools.utils import tests_inside_container
 
 
 class _Map(object):
@@ -208,3 +209,9 @@ class Container(object):
             ports.append(str(int(line[1].split(':', 1)[1], 16)))
 
         return ports
+
+    def get_addr(self, port):
+        if tests_inside_container():
+            return (self.ips.primary, int(port.split('/')[0]))
+        else:
+            return ('127.0.0.1', self.ports[port][0])
