@@ -1,5 +1,3 @@
-import sys
-
 from pytest_docker_tools.builder import fixture_factory
 
 

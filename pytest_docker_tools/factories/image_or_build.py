@@ -1,5 +1,4 @@
 import os
-import sys
 
 from .build import build
 from .image import image

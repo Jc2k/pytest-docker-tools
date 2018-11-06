@@ -31,7 +31,7 @@ def tests_inside_container():
     if not os.path.exists('/proc/1/sched'):
         return False
 
-    with open('/proc/1/sched', 'r') as rp:
+    with open('/proc/1/sched', 'r') as fp:
         line1 = fp.read().split()[0]
 
     # Right now this file contains a header like this which leaks the actual pid
