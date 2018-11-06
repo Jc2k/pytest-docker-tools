@@ -32,7 +32,7 @@ def tests_inside_container():
         return False
 
     with open('/proc/1/sched', 'r') as fp:
-        line1 = fp.read().split()[0]
+        line1 = fp.read().split('\n')[0]
 
     # Right now this file contains a header like this which leaks the actual pid
     #     systemd (1, #threads: 1)
