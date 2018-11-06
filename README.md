@@ -453,6 +453,32 @@ This is the fixture used by our fixture factories. This means if you define a `d
 
 ## Tips and tricks
 
+### Testing build artifacts
+
+We often find ourselves using a set of tests against a container we've built at test time (with `build()`) but then wanting to use the same tests with an artifact generated on our CI platform (with `image()`). This ended up looking like this:
+
+```
+if not os.environ.get('IMAGE_ID', ''):
+    image = build(path='examples/resolver-service/dns')
+else:
+    image = image(name=os.environ['IMAGE_ID'])
+```
+
+But now you can just do:
+
+```python
+from pytest_docker_tools import image_or_build
+
+image = image_or_build(
+    environ_key='IMAGE_ID',
+    path='examples/resolver-service/dns',
+)
+
+def test_image(image):
+    assert image.attrs['Os'] == 'linux'
+```
+
+
 ### Client fixtures
 
 You will probably want to create an API client for the service you are testing. Although we've already done this in the README, its worth calling it out. You can define a client fixture, have it depend on your docker containers, and then only have to reference the client from your tests.
