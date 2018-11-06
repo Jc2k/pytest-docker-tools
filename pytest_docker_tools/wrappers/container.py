@@ -6,8 +6,12 @@ object that are useful for integration testing.
 import io
 import tarfile
 
-from pytest_docker_tools.exceptions import ContainerFailed
-from pytest_docker_tools.utils import tests_inside_container
+from pytest_docker_tools.exceptions import (
+    ContainerFailed,
+    ContainerNotReady,
+    TimeoutError,
+)
+from pytest_docker_tools.utils import tests_inside_container, wait_for_callable
 
 
 class _Map(object):
@@ -124,8 +128,19 @@ class Container(object):
     def status(self):
         return self._container.status
 
+    def exec_run(self, *args, **kwargs):
+        return self._container.exec_run(*args, **kwargs)
+
     def reload(self):
         return self._container.reload()
+
+    def restart(self, timeout=10):
+        self._container.restart(timeout=timeout)
+
+        try:
+            wait_for_callable('Waiting for container to be ready after restart', self.ready)
+        except TimeoutError:
+            raise ContainerNotReady(self, 'Timeout while waiting for container to be ready after restart')
 
     def kill(self, signal=None):
         return self._container.kill(signal)

@@ -62,6 +62,13 @@ import socket
 def test_my_frobulator(apiserver):
     sock = socket.socket()
     sock.connect(('127.0.0.1', apiserver.ports['8080/tcp'][0]))
+
+
+def test_my_frobulator_works_after_restart(apiserver):
+    apiserver.restart()
+
+    sock = socket.socket()
+    sock.connect(('127.0.0.1', apiserver.ports['8080/tcp'][0]))
 ```
 
 In this example all the dependencies will be resolved in order and once per session:
