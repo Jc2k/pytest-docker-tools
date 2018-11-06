@@ -6,5 +6,5 @@ from .image import image
 
 def image_or_build(environ_key, **kwargs):
     if environ_key in os.environ:
-        return image(name=os.environ[kwargs['environ_key']])
+        return image(name=os.environ[environ_key])
     return build(**kwargs)
