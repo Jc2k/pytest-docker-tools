@@ -340,10 +340,10 @@ def test_logs(redis):
 
 ### Images
 
-To pull an image from your default repository use the `fetch` fixture factory. To build an image from local source use the `build` fixture factory.
+To pull an image from your default repository use the `fetch` fixture factory. To build an image from local source use the `build` fixture factory. If you are smoke testing an artifact already built locally you can use the `image` fixture factory to reference it.
 
 ```python
-from pytest_docker_tools import build, fetch
+from pytest_docker_tools import build, image, fetch
 
 my_image = fetch(repository='redis:latest')
 

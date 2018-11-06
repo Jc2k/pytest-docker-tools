@@ -2,7 +2,7 @@
 An opionated set of helpers for defining Docker integration test environments with py.test fixtures.
 '''
 
-from .factories import build, container, fetch, network, volume
+from .factories import build, container, fetch, image, network, volume
 
 
 __version__ = '0.0.11'
@@ -12,6 +12,7 @@ __all__ = [
     'build',
     'container',
     'fetch',
+    'image',
     'network',
     'volume',
 ]
