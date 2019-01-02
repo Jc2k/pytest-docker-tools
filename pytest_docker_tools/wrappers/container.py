@@ -217,8 +217,9 @@ class Container(object):
 
             line = line.split()
 
-            # Only interested in listen sockets
-            if line[3] != '0A':
+            # If we are listening on a UDP port it will appear in /proc/net/udp
+            # and state will be '07'
+            if line[3] != '07':
                 continue
 
             ports.append(str(int(line[1].split(':', 1)[1], 16)))
