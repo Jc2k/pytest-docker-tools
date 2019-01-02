@@ -187,7 +187,7 @@ class Container(object):
 
     def get_open_tcp_ports(self):
         ''' Gets all TCP sockets in the LISTEN state '''
-        netstat = self._container.exec_run('cat /proc/net/tcp')[1].decode('utf-8').strip()
+        netstat = self._container.exec_run('cat /proc/net/tcp /proc/net/tcp6')[1].decode('utf-8').strip()
 
         ports = []
         for line in netstat.split('\n'):
@@ -207,7 +207,7 @@ class Container(object):
 
     def get_open_udp_ports(self):
         ''' Gets all UDP sockets in the LISTEN state '''
-        netstat = self._container.exec_run('cat /proc/net/udp')[1].decode('utf-8').strip()
+        netstat = self._container.exec_run('cat /proc/net/udp /proc/net/udp6')[1].decode('utf-8').strip()
 
         ports = []
         for line in netstat.split('\n'):
