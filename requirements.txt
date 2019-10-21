@@ -22,5 +22,5 @@ pytest-markdown==0.0.6
 requests==2.21.0
 six==1.11.0
 testfixtures==6.2.0
-urllib3==1.23
+urllib3==1.24.2
 websocket-client==0.48.0
