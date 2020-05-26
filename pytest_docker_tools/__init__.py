@@ -5,7 +5,7 @@ An opionated set of helpers for defining Docker integration test environments wi
 from .factories import build, container, fetch, image, image_or_build, network, volume
 
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 __all__ = [
