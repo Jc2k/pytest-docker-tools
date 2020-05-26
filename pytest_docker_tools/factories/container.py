@@ -17,7 +17,7 @@ def container(request, docker_client, wrapper_class, **kwargs):
     container = wrapper_class(raw_container)
 
     try:
-        wait_for_callable('Waiting for container to be ready', container.ready)
+        wait_for_callable('Waiting for container to be ready', container.ready, kwargs.pop('timeout', 30))
     except TimeoutError:
         raise ContainerNotReady(container, 'Timeout while waiting for container to be ready')
 
