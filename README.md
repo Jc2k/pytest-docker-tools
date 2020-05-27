@@ -273,7 +273,13 @@ If for some reason it's not ready in the timeout period (30 seconds by default) 
 `timeout` can be passed to the `container` factory:
 
 ```python
-redis = container(image='redis:latest', timeout=60)
+from pytest_docker_tools import container, fetch
+
+redis_image = fetch(repository='redis:latest')
+redis = container(image='{redis_image.id}', timeout=30)
+
+def test_container_starts(redis):
+    assert redis.status == "running"
 ```
 
 
