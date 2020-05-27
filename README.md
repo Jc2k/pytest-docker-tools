@@ -266,7 +266,21 @@ def test_container_starts(redis):
 
 This will fetch the latest `redis:latest` first, and then run a container from the exact image that was pulled. Note that if you don't use `build` or `fetch` to prepare a Docker image then the tag or hash that you specify must already exist on the host where you are running the tests. There is no implicit fetching of Docker images.
 
-The container will be automatically deleted after the test has finished.
+The container will be ready when the test is started, and will be automatically deleted after the test has finished.
+
+If for some reason it's not ready in the timeout period (30 seconds by default) the test will fail.
+
+`timeout` can be passed to the `container` factory:
+
+```python
+from pytest_docker_tools import container, fetch
+
+redis_image = fetch(repository='redis:latest')
+redis = container(image='{redis_image.id}', timeout=30)
+
+def test_container_starts(redis):
+    assert redis.status == "running"
+```
 
 
 #### Ip Addresses
