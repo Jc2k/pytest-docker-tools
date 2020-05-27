@@ -8,6 +8,8 @@ from pytest_docker_tools.wrappers import Container
 def container(request, docker_client, wrapper_class, **kwargs):
     ''' Docker container: image={image} '''
 
+    timeout = kwargs.pop('timeout', 30)
+
     kwargs.update({'detach': True})
 
     raw_container = docker_client.containers.run(**kwargs)
@@ -17,7 +19,7 @@ def container(request, docker_client, wrapper_class, **kwargs):
     container = wrapper_class(raw_container)
 
     try:
-        wait_for_callable('Waiting for container to be ready', container.ready, kwargs.pop('timeout', 30))
+        wait_for_callable('Waiting for container to be ready', container.ready, timeout)
     except TimeoutError:
         raise ContainerNotReady(container, 'Timeout while waiting for container to be ready')
 
