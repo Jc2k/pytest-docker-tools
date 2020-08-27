@@ -874,3 +874,29 @@ def test_container_wrapper_class(apiserver):
     ipaddress.ip_address(result['result'])
 
 ```
+
+## Hacking
+
+Set up a virtualenv for development:
+
+```
+$ python3 -m venv venv
+$ . venv/bin/activate
+$ pip install -U pip
+$ pip install flit -r requirements.txt
+$ flit install --symlink
+```
+
+Run tests and check coverage:
+
+```
+$ coverage run --source pytest_docker_tools -m py.test
+$ coverage html
+$ $BROWSER htmlcov/index.html
+```
+
+Check style:
+
+```
+$ flake8 pytest_docker_tools tests
+```
