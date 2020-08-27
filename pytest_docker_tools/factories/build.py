@@ -11,7 +11,10 @@ def build(request, docker_client, wrapper_class, **kwargs):
     # Let's do what docker build does by default
     kwargs.setdefault('rm', True)
 
-    sys.stdout.write(f'Building {kwargs["path"]}')
+    if 'path' in kwargs:
+        sys.stdout.write(f'Building {kwargs["path"]}')
+    else:
+        sys.stdout.write(f'Building')
 
     try:
         image, logs = docker_client.images.build(**kwargs)

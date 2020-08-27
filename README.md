@@ -282,6 +282,25 @@ def test_container_starts(redis):
     assert redis.status == "running"
 ```
 
+To create a container defining its `Dockerfile` in code:
+
+```python
+import io
+
+from pytest_docker_tools import build, container
+
+dockerfile = io.BytesIO(b"""
+FROM alpine:3.12
+RUN apk --no-cache add python3
+CMD ["tail", "-f", "/dev/null"]
+""")
+
+image = build(fileobj=dockerfile)
+container = container(image='{image.id}')
+
+def test_container_starts(container):
+    assert container.status == "running"
+```
 
 #### Ip Addresses
 

@@ -5,7 +5,9 @@ from .templates import find_fixtures_in_params, resolve_fixtures_in_params
 
 def build_fixture_function(callable, scope, wrapper_class, kwargs):
     name = callable.__name__
-    docstring = getattr(callable, '__doc__', '').format(**kwargs)
+    docstring = 'Docker image'
+    if 'path' in kwargs:
+        docstring = getattr(callable, '__doc__', '').format(**kwargs)
     fixtures = find_fixtures_in_params(kwargs).union(set(('request', 'docker_client')))
     fixtures_str = ','.join(fixtures)
 
