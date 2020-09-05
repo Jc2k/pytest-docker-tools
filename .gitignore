@@ -3,3 +3,5 @@ __pycache__
 pytest_docker_tools.egg-info
 *.pyc
 venv
+.coverage
+htmlcov
