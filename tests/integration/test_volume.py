@@ -9,4 +9,4 @@ def test_volume_created(docker_client, test_volume_1):
             # Looks like we managed to start one!
             break
     else:
-        assert False, 'Looks like we failed to create a volume'
+        assert False, "Looks like we failed to create a volume"

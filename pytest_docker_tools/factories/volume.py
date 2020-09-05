@@ -23,7 +23,7 @@ def _populate_volume(docker_client, volume, seeds):
     fp.seek(0)
 
     image, logs = docker_client.images.build(
-        path=os.path.join(os.path.dirname(__file__), '..', 'contexts/scratch'),
+        path=os.path.join(os.path.dirname(__file__), "..", "contexts/scratch"),
         rm=True,
     )
     list(logs)
@@ -31,24 +31,24 @@ def _populate_volume(docker_client, volume, seeds):
     container = docker_client.containers.create(
         image=image.id,
         volumes={
-            f'{volume.name}': {'bind': '/data'},
+            f"{volume.name}": {"bind": "/data"},
         },
     )
 
     try:
-        container.put_archive('/data', fp)
+        container.put_archive("/data", fp)
     finally:
         container.remove(force=True)
 
 
 @fixture_factory()
 def volume(request, docker_client, wrapper_class, **kwargs):
-    ''' Docker volume '''
+    """ Docker volume """
 
-    name = kwargs.pop('name', 'pytest-{uuid}').format(uuid=str(uuid.uuid4()))
-    seeds = kwargs.pop('initial_content', {})
+    name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
+    seeds = kwargs.pop("initial_content", {})
 
-    print(f'Creating volume {name}')
+    print(f"Creating volume {name}")
     volume = docker_client.volumes.create(name, **kwargs)
     request.addfinalizer(lambda: volume.remove(True))
 

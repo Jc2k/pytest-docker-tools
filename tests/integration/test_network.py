@@ -9,4 +9,4 @@ def test_network_created(docker_client, test_network_1):
             # Looks like we managed to start one!
             break
     else:
-        assert False, 'Looks like we failed to create a network'
+        assert False, "Looks like we failed to create a network"

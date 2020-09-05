@@ -1,4 +1,4 @@
-'''
+"""
 # Template handling
 
 Fixture factories can take static strings:
@@ -45,19 +45,18 @@ def test_simple_find():
 
     dependencies = find_fixtures_in_params(kwargs)
     assert dependencies = set('pytestconfig')
-'''
+"""
 
 import inspect
 from string import Formatter
 
 __all__ = [
-    'find_fixtures_in_params',
-    'resolve_fixtures_in_params',
+    "find_fixtures_in_params",
+    "resolve_fixtures_in_params",
 ]
 
 
 class FixtureFormatter(Formatter):
-
     def __init__(self, request):
         self.request = request
 
@@ -65,8 +64,7 @@ class FixtureFormatter(Formatter):
         return self.request.getfixturevalue(key)
 
 
-class Renderer(object):
-
+class Renderer:
     def __init__(self, request):
         self.request = request
 
@@ -74,7 +72,9 @@ class Renderer(object):
         if isinstance(val, str):
             return FixtureFormatter(self.request).format(val)
         elif callable(val):
-            return val(*[self.request.getfixturevalue(f) for f in inspect.getargspec(val)[0]])
+            return val(
+                *[self.request.getfixturevalue(f) for f in inspect.getargspec(val)[0]]
+            )
         return val
 
     def visit_list(self, val):
@@ -92,13 +92,12 @@ class Renderer(object):
             return self.visit_value(value)
 
 
-class FixtureFinder(object):
-
+class FixtureFinder:
     def visit_value(self, val):
         if isinstance(val, str):
             for literal_text, format_spec, conversion, _ in Formatter().parse(val):
                 if format_spec:
-                    yield format_spec.split('.')[0].split('[')[0]
+                    yield format_spec.split(".")[0].split("[")[0]
         elif callable(val):
             yield from inspect.getargspec(val)[0]
 
@@ -121,16 +120,16 @@ class FixtureFinder(object):
 
 
 def find_fixtures_in_params(value):
-    '''
+    """
     Walk an object and identify fixtures references in templates in strings.
-    '''
+    """
     finder = FixtureFinder()
     return set(finder.visit(value))
 
 
 def resolve_fixtures_in_params(request, value):
-    '''
+    """
     Walk an object and resolve fixture values referenced in template strings.
-    '''
+    """
     renderer = Renderer(request)
     return renderer.visit(value)

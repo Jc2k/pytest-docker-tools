@@ -3,7 +3,6 @@ class TimeoutError(Exception):
 
 
 class ContainerError(Exception):
-
     def __init__(self, container, *args, **kwargs):
         self._container = container
         super().__init__(*args, **kwargs)

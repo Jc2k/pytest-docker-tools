@@ -3,28 +3,28 @@ import sys
 from pytest_docker_tools.builder import fixture_factory
 
 
-@fixture_factory(scope='session')
+@fixture_factory(scope="session")
 def build(request, docker_client, wrapper_class, **kwargs):
-    ''' Docker image: built from "{path}" '''
+    """ Docker image: built from "{path}" """
 
     # The docker build command now defaults to --rm=true, but docker-py doesnt
     # Let's do what docker build does by default
-    kwargs.setdefault('rm', True)
+    kwargs.setdefault("rm", True)
 
-    if 'path' in kwargs:
+    if "path" in kwargs:
         sys.stdout.write(f'Building {kwargs["path"]}')
     else:
-        sys.stdout.write(f'Building')
+        sys.stdout.write("Building")
 
     try:
         image, logs = docker_client.images.build(**kwargs)
 
         for line in logs:
-            sys.stdout.write('.')
+            sys.stdout.write(".")
             sys.stdout.flush()
 
     finally:
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
 
     # request.addfinalizer(lambda: docker_client.images.remove(image.id))
 
