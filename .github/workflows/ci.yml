@@ -81,7 +81,11 @@ jobs:
 
     strategy:
       matrix:
-        os: [Ubuntu, MacOS, Windows]
+        # os: [Ubuntu, MacOS, Windows]
+        # Development primarily happens on macOS, it does work with Docker for Mac
+        # Windows is not tested at all
+        # Neither are currently an option on GitHub CI
+        os: [Ubuntu]
         python-version: [3.7, 3.8]
 
     env:
