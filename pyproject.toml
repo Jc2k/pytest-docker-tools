@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytest_docker_tools"
-version = "0.2.3"
+version = "1.0.0"
 description = "Docker integration tests for pytest"
 authors = ["John Carr <john.carr@unrouted.co.uk>"]
 license = "Apache-2.0"
