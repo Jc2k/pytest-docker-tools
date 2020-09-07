@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout and install dependencies
-      uses: Jc2k/actions-poetry
+      uses: Jc2k/actions-poetry@main
       with:
         python-version: 3.7
 
@@ -60,7 +60,7 @@ jobs:
 
     steps:
     - name: Checkout and install dependencies
-      uses: Jc2k/actions-poetry
+      uses: Jc2k/actions-poetry@main
       with:
         python-version: ${{ matrix.python-version }}
 
