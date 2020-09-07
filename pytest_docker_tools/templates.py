@@ -73,7 +73,10 @@ class Renderer:
             return FixtureFormatter(self.request).format(val)
         elif callable(val):
             return val(
-                *[self.request.getfixturevalue(f) for f in inspect.getargspec(val)[0]]
+                *[
+                    self.request.getfixturevalue(f)
+                    for f in inspect.getfullargspec(val)[0]
+                ]
             )
         return val
 
@@ -99,7 +102,7 @@ class FixtureFinder:
                 if format_spec:
                     yield format_spec.split(".")[0].split("[")[0]
         elif callable(val):
-            yield from inspect.getargspec(val)[0]
+            yield from inspect.getfullargspec(val)[0]
 
     def visit_list(self, val):
         for v in val:

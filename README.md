@@ -143,26 +143,32 @@ def test_session_1(memcache_session):
     sock = socket.socket()
     sock.connect(('127.0.0.1', memcache_session.ports['11211/tcp'][0]))
     sock.sendall(b'set mykey 0 600 4\r\ndata\r\n')
+    sock.sendall(b'get mykey\r\n')
+    assert sock.recv(1024) == b'STORED\r\nVALUE mykey 0 4\r\ndata\r\nEND\r\n'
     sock.close()
 
 def test_session_2(memcache_session):
     sock = socket.socket()
     sock.connect(('127.0.0.1', memcache_session.ports['11211/tcp'][0]))
+    sock.sendall(b'set mykey 0 600 4\r\ndata\r\n')
     sock.sendall(b'get mykey\r\n')
-    assert sock.recv(1024) == b'VALUE mykey 0 4\r\ndata\r\nEND\r\n'
+    assert sock.recv(1024) == b'STORED\r\nVALUE mykey 0 4\r\ndata\r\nEND\r\n'
     sock.close()
 
 def test_module_1(memcache_module):
     sock = socket.socket()
     sock.connect(('127.0.0.1', memcache_module.ports['11211/tcp'][0]))
     sock.sendall(b'set mykey 0 600 4\r\ndata\r\n')
+    sock.sendall(b'get mykey\r\n')
+    assert sock.recv(1024) == b'STORED\r\nVALUE mykey 0 4\r\ndata\r\nEND\r\n'
     sock.close()
 
 def test_module_2(memcache_module):
     sock = socket.socket()
     sock.connect(('127.0.0.1', memcache_module.ports['11211/tcp'][0]))
+    sock.sendall(b'set mykey 0 600 4\r\ndata\r\n')
     sock.sendall(b'get mykey\r\n')
-    assert sock.recv(1024) == b'VALUE mykey 0 4\r\ndata\r\nEND\r\n'
+    assert sock.recv(1024) == b'STORED\r\nVALUE mykey 0 4\r\ndata\r\nEND\r\n'
     sock.close()
 ```
 
@@ -371,7 +377,10 @@ from pytest_docker_tools import container, fetch
 
 
 redis_image = fetch(repository='redis:latest')
-redis = container(image='{redis_image.id}')
+redis = container(
+    image='{redis_image.id}',
+    ports={'6379/tcp': None},
+)
 
 def test_logs(redis):
     assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in redis.logs()
