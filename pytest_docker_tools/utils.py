@@ -28,16 +28,4 @@ def wait_for_callable(message, callable, timeout=30):
 def tests_inside_container():
     """ Returns True if tests are running inside a Linux container """
 
-    if not os.path.exists("/proc/1/sched"):
-        return False
-
-    with open("/proc/1/sched") as fp:
-        line1 = fp.read().split("\n")[0]
-
-    # Right now this file contains a header like this which leaks the actual pid
-    #     systemd (1, #threads: 1)
-    # If its not '1' we have detected containment
-
-    init, info = line1.split(" ", 1)
-    pid, threads = info.strip("(").rstrip(")").split(", ", 1)
-    return pid != "1"
+    return os.path.isfile("/.dockerenv") or os.path.isfile("/run/.containerenv")
