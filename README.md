@@ -550,6 +550,38 @@ def test_connect_my_service(apiserver):
     # ... connect to ip:port ...
 ```
 
+### Dynamic scope
+
+The pytest fixture decorator now lets you specify a callback to determine the scope of a fixture This is called [dynamic scope](https://docs.pytest.org/en/stable/fixture.html#dynamic-scope). You can use this to make it a runtime option whether to have a container instance per test or per test run. For example:
+
+```python
+# conftest.py
+from pytest_docker_tools import container, fetch
+
+def determine_scope(fixture_name, config):
+    if config.getoption("--keep-containers", None):
+        return "session"
+    return "function"
+
+memcache_image = fetch(repository='memcached:latest')
+
+memcache = container(
+    image='{memcache_image.id}',
+    scope=determine_scope,
+    ports={
+        '11211/tcp': None,
+    },
+)
+```
+
+Your tests can look exactly the same as before:
+
+```python
+def test_connect_my_service(memcache):
+    ip, port = memcache.get_addr('11211/tcp')
+    # ... connect to ip:port ...
+```
+
 
 ### Client fixtures
 
