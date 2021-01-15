@@ -86,7 +86,7 @@ jobs:
         # Windows is not tested at all
         # Neither are currently an option on GitHub CI
         os: [Ubuntu]
-        python-version: [3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
 
     env:
       OS: ${{ matrix.os }}
