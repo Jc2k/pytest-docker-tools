@@ -10,9 +10,7 @@ def build_fixture_function(callable, scope, wrapper_class, kwargs):
             name, callable.__module__
         )
     ]
-    docstring.extend(
-        f"        {key}: {value}" for key, value in kwargs.items()
-    )
+    docstring.extend(f"        {key}: {value}" for key, value in kwargs.items())
     docstring = "\n".join(docstring)
 
     fixtures = find_fixtures_in_params(kwargs).union({"request", "docker_client"})
