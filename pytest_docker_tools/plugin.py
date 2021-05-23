@@ -49,7 +49,6 @@ def pytest_addoption(parser):
     group.addoption(
         "--reuse_containers",
         action="store_true",
-        # help="shortcut for '--dist=load --tx=NUM*popen', "
-        # "you can use 'auto' here for auto detection CPUs number on "
-        # "host system and it will be 0 when used with --pdb",
+        help="reuse existing containers instead of always creating new ones. Requires the 'name' attribute to be set"
+             "on container definition"
     )
