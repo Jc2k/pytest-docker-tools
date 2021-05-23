@@ -32,7 +32,7 @@ def pytest_runtest_makereport(item, call):
         return
 
     for name, fixturedef in item.funcargs["request"]._fixture_defs.items():
-        if not hasattr(fixturedef, "cached_result"):
+        if not hasattr(fixturedef, "cached_result") or not fixturedef.cached_result:
             continue
         fixture = fixturedef.cached_result[0]
         if isinstance(fixture, Container):

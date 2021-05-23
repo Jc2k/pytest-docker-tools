@@ -5,9 +5,14 @@ from .templates import find_fixtures_in_params, resolve_fixtures_in_params
 
 def build_fixture_function(callable, scope, wrapper_class, kwargs):
     name = callable.__name__
-    docstring = "Docker image"
-    if "path" in kwargs:
-        docstring = getattr(callable, "__doc__", "").format(**kwargs)
+    docstring = [
+        "An instance of {}.{} created with the following:\n".format(
+            name, callable.__module__
+        )
+    ]
+    docstring.extend(f"        {key}: {value}" for key, value in kwargs.items())
+    docstring = "\n".join(docstring)
+
     fixtures = find_fixtures_in_params(kwargs).union({"request", "docker_client"})
     fixtures_str = ",".join(fixtures)
 
@@ -15,13 +20,15 @@ def build_fixture_function(callable, scope, wrapper_class, kwargs):
         f"""
     import pytest
 
-    @pytest.fixture(scope=scope)
     def {name}({fixtures_str}):
         \'\'\'
         {docstring}
         \'\'\'
         real_kwargs = resolve_fixtures_in_params(request, kwargs)
         return _{name}(request, docker_client, wrapper_class=wrapper_class, **real_kwargs)
+
+    {name}.__module__ = callable.__module__
+    {name} = pytest.fixture(scope=scope)({name})
     """
     )
     globals = {
