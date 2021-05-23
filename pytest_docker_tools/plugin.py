@@ -42,3 +42,14 @@ def pytest_runtest_makereport(item, call):
                     fixture.logs(),
                 )
             )
+
+
+def pytest_addoption(parser):
+    group = parser.getgroup("pytest-docker-tools", "Pytest Docker Tools")
+    group.addoption(
+        "--reuse_containers",
+        action="store_true",
+        # help="shortcut for '--dist=load --tx=NUM*popen', "
+        # "you can use 'auto' here for auto detection CPUs number on "
+        # "host system and it will be 0 when used with --pdb",
+    )
