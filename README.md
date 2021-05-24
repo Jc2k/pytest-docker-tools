@@ -942,8 +942,9 @@ This behavior might not always be what you want.
 As an example you may be writing a test and want to execute it repeatedly. Normally this will always take a couple of extra  
 seconds to spawn the containers, which you might find annoying. Also, you may tend to hit the stop button more than once if one of your tests fails which will abort the normal container cleanup by the finalizers.   
 
-By using the `--reuse_containers` command line argument containers will not be cleaned up after executing the tests. By using the name property the container fixture factory of Pytest-Docker-Tools 
-will try to find a container with that name and return it to your test instead of creating a new test.
+By using the `--reuse_containers` command line argument and specifying the `name` attribute containers will not be cleaned up after executing the tests. By using the name property the container fixture factory of Pytest-Docker-Tools 
+will try to find a container with that name and return it to your test instead of creating a new test.  
+**Attention**: Not using the `name` attribute results in creating multiple containers as usual, but without the clean up finalizer. 
 
 ### Notes on using reusable Containers
 

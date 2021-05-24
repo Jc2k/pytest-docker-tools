@@ -11,8 +11,8 @@ def container(request, docker_client, wrapper_class, **kwargs):
     wrapper_class = wrapper_class or Container
 
     if request.config.option.reuse_containers:
-        name = kwargs['name']
-        if name:
+        if 'name' in kwargs.keys():
+            name = kwargs['name']
             current_containers = docker_client.containers.list(ignore_removed=True)
             for cont in current_containers:
                 if cont.name == name:
