@@ -950,7 +950,7 @@ will try to find a container with that name and return it to your test instead o
 + Containers created using the `--reuse_containers` option will not have a finalizer, so scopes will may not behave like they normally would
 + When reusing containers you are responsible to clean up databases as your test data will not be deleted when your tests are finished.
 + Each Container created by Pytest-Docker-Tools will get the following label: `Container_Creator: Pytest-Docker-Tools`. When required, this can be used to search for left over 
-  containers for manual clean up by `docker ps -a --filter "label=Container_Creator=Pytest-Docker-Tools" | xargs docker rm -f`
+  containers for manual clean up by `docker ps -aq --filter "label=Container_Creator=Pytest-Docker-Tools" | xargs docker rm -f`
 
 
 ## Hacking
