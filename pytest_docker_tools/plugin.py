@@ -50,5 +50,5 @@ def pytest_addoption(parser):
         "--reuse_containers",
         action="store_true",
         help="reuse existing containers instead of always creating new ones. Requires the 'name' attribute to be set"
-             "on container definition"
+        "on container definition",
     )
