@@ -4,7 +4,7 @@ If a container depends on an image and a container, and that container depends
 on another container, and so on, then all the contains should be built in the
 right order.
 """
-
+import os
 from pytest_docker_tools import build, container, fetch, network, volume
 
 redis_image = fetch(repository="redis:latest")
@@ -16,7 +16,7 @@ redis0 = container(
     },
 )
 
-foobar = build(path="tests/integration")
+foobar = build(path=os.getcwd())
 mynetwork = network()
 myvolume = volume()
 mycontainer = container(
