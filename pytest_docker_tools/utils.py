@@ -5,6 +5,9 @@ import time
 from .exceptions import TimeoutError
 
 
+DOCKER_LABEL_REUSABLE_CONTAINER = "pytest-docker-tools.reusable-container"
+
+
 def wait_for_callable(message, callable, timeout=30):
     """
     Runs a callable once a second until it returns True or we hit the timeout.
@@ -29,3 +32,13 @@ def tests_inside_container():
     """ Returns True if tests are running inside a Linux container """
 
     return os.path.isfile("/.dockerenv") or os.path.isfile("/run/.containerenv")
+
+
+def is_reusable_container(container):
+    return (
+        DOCKER_LABEL_REUSABLE_CONTAINER in container.attrs["Config"]["Labels"]
+        and container.attrs["Config"]["Labels"][
+            DOCKER_LABEL_REUSABLE_CONTAINER
+        ]
+        == "True"
+    )

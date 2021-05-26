@@ -47,8 +47,9 @@ def pytest_runtest_makereport(item, call):
 def pytest_addoption(parser):
     group = parser.getgroup("pytest-docker-tools", "Pytest Docker Tools")
     group.addoption(
-        "--reuse_containers",
+        "--reuse-containers",
         action="store_true",
+        dest="reuse_containers",
         help="reuse existing containers instead of always creating new ones. Requires the 'name' attribute to be set"
         "on container definition",
     )

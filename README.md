@@ -942,16 +942,16 @@ This behavior might not always be what you want.
 As an example you may be writing a test and want to execute it repeatedly. Normally this will always take a couple of extra  
 seconds to spawn the containers, which you might find annoying. Also, you may tend to hit the stop button more than once if one of your tests fails which will abort the normal container cleanup by the finalizers.   
 
-By using the `--reuse_containers` command line argument and specifying the `name` attribute containers will not be cleaned up after executing the tests. By using the name property the container fixture factory of Pytest-Docker-Tools 
+By using the `--reuse-containers` command line argument and specifying the `name` attribute containers will not be cleaned up after executing the tests. By using the name property the container fixture factory of Pytest-Docker-Tools 
 will try to find a container with that name and return it to your test instead of creating a new test.  
 **Attention**: Not using the `name` attribute results in creating multiple containers as usual, but without the clean up finalizer. 
 
 ### Notes on using reusable Containers
 
-+ Containers created using the `--reuse_containers` option will not have a finalizer, so scopes will may not behave like they normally would
++ Containers created using the `--reuse-containers` option will not have a finalizer, so scopes will may not behave like they normally would
 + When reusing containers you are responsible to clean up databases as your test data will not be deleted when your tests are finished.
-+ Each Container created by Pytest-Docker-Tools will get the following label: `Container_Creator: Pytest-Docker-Tools`. When required, this can be used to search for left over 
-  containers for manual clean up by `docker ps -aq --filter "label=Container_Creator=Pytest-Docker-Tools" | xargs docker rm -f`
++ Each Container created by Pytest-Docker-Tools will get the following label: `container-creator: pytest-docker-tools`. When required, this can be used to search for left over 
+  containers for manual clean up by `docker ps -aq --filter "label=container-creator=pytest-docker-tools" | xargs docker rm -f`
 
 
 ## Hacking

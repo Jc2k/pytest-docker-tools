@@ -1,6 +1,8 @@
+from pytest import UsageError
+
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
-from pytest_docker_tools.utils import wait_for_callable
+from pytest_docker_tools.utils import wait_for_callable, is_reusable_container, DOCKER_LABEL_REUSABLE_CONTAINER
 from pytest_docker_tools.wrappers import Container
 
 
@@ -15,19 +17,11 @@ def container(request, docker_client, wrapper_class, **kwargs):
             name = kwargs["name"]
             current_containers = docker_client.containers.list(ignore_removed=True)
             for cont in current_containers:
-                if cont.name == name:
-                    if (
-                        "Pytest-Docker-Tools.Reusable_Container"
-                        in cont.attrs["Config"]["Labels"]
-                        and cont.attrs["Config"]["Labels"][
-                            "Pytest-Docker-Tools.Reusable_Container"
-                        ]
-                        == "True"
-                    ):
-                        return wrapper_class(cont)
+                if cont.name == name and is_reusable_container(cont):
+                    return wrapper_class(cont)
         else:
-            raise RuntimeError(
-                "Error: Tried to use '--reuse_containers' command line argument without "
+            raise UsageError(
+                "Error: Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on container"
             )
 
@@ -37,8 +31,8 @@ def container(request, docker_client, wrapper_class, **kwargs):
     kwargs.update(
         {
             "labels": {
-                "Container_Creator": "Pytest-Docker-Tools",
-                "Pytest-Docker-Tools.Reusable_Container": str(
+                "container-creator": "pytest-docker-tools",
+                DOCKER_LABEL_REUSABLE_CONTAINER: str(
                     request.config.option.reuse_containers
                 ),
             }
