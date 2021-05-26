@@ -36,9 +36,7 @@ def container(request, docker_client, wrapper_class, **kwargs):
         {
             "labels": {
                 "container-creator": "pytest-docker-tools",
-                LABEL_REUSABLE_CONTAINER: str(
-                    request.config.option.reuse_containers
-                ),
+                LABEL_REUSABLE_CONTAINER: str(request.config.option.reuse_containers),
             }
         }
     )
