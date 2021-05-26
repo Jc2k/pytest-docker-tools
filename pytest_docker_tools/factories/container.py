@@ -2,7 +2,11 @@ from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
-from pytest_docker_tools.utils import wait_for_callable, is_reusable_container, DOCKER_LABEL_REUSABLE_CONTAINER
+from pytest_docker_tools.utils import (
+    DOCKER_LABEL_REUSABLE_CONTAINER,
+    is_reusable_container,
+    wait_for_callable,
+)
 from pytest_docker_tools.wrappers import Container
 
 

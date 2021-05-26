@@ -4,7 +4,6 @@ import time
 
 from .exceptions import TimeoutError
 
-
 DOCKER_LABEL_REUSABLE_CONTAINER = "pytest-docker-tools.reusable-container"
 
 

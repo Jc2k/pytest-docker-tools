@@ -4,7 +4,7 @@ import socket
 import pytest
 
 from pytest_docker_tools import build, container, fetch, image
-from pytest_docker_tools.utils import wait_for_callable, DOCKER_LABEL_REUSABLE_CONTAINER
+from pytest_docker_tools.utils import DOCKER_LABEL_REUSABLE_CONTAINER, wait_for_callable
 
 test_container_1_image = fetch(repository="redis:latest")
 test_container_1_same_image = image(name="redis:latest")
