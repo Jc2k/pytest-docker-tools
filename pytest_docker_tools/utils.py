@@ -36,8 +36,6 @@ def tests_inside_container():
 def is_reusable_container(container):
     return (
         DOCKER_LABEL_REUSABLE_CONTAINER in container.attrs["Config"]["Labels"]
-        and container.attrs["Config"]["Labels"][
-            DOCKER_LABEL_REUSABLE_CONTAINER
-        ]
+        and container.attrs["Config"]["Labels"][DOCKER_LABEL_REUSABLE_CONTAINER]
         == "True"
     )

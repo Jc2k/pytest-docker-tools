@@ -64,10 +64,7 @@ def test_container_ipv6(ipv6):
 def test_container_label(docker_client, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         assert "container-creator" in c.attrs["Config"]["Labels"].keys()
-        assert (
-            DOCKER_LABEL_REUSABLE_CONTAINER
-            in c.attrs["Config"]["Labels"].keys()
-        )
+        assert DOCKER_LABEL_REUSABLE_CONTAINER in c.attrs["Config"]["Labels"].keys()
         assert c.attrs["Config"]["Labels"]["container-creator"] == "pytest-docker-tools"
 
         break
