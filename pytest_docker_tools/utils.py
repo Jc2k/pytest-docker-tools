@@ -4,7 +4,7 @@ import time
 
 from .exceptions import TimeoutError
 
-DOCKER_LABEL_REUSABLE_CONTAINER = "pytest-docker-tools.reusable-container"
+LABEL_REUSABLE_CONTAINER = "pytest-docker-tools.reusable-container"
 
 
 def wait_for_callable(message, callable, timeout=30):
@@ -34,4 +34,4 @@ def tests_inside_container():
 
 
 def is_reusable_container(container):
-    return container.attrs["Config"]["Labels"].get(DOCKER_LABEL_REUSABLE_CONTAINER) == "True"
+    return container.attrs["Config"]["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"

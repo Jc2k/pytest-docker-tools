@@ -3,7 +3,7 @@ from pytest import UsageError
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
 from pytest_docker_tools.utils import (
-    DOCKER_LABEL_REUSABLE_CONTAINER,
+    LABEL_REUSABLE_CONTAINER,
     is_reusable_container,
     wait_for_callable,
 )
@@ -36,7 +36,7 @@ def container(request, docker_client, wrapper_class, **kwargs):
         {
             "labels": {
                 "container-creator": "pytest-docker-tools",
-                DOCKER_LABEL_REUSABLE_CONTAINER: str(
+                LABEL_REUSABLE_CONTAINER: str(
                     request.config.option.reuse_containers
                 ),
             }

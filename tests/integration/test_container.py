@@ -4,7 +4,7 @@ import socket
 import pytest
 
 from pytest_docker_tools import build, container, fetch, image
-from pytest_docker_tools.utils import DOCKER_LABEL_REUSABLE_CONTAINER, wait_for_callable
+from pytest_docker_tools.utils import LABEL_REUSABLE_CONTAINER, wait_for_callable
 
 test_container_1_image = fetch(repository="redis:latest")
 test_container_1_same_image = image(name="redis:latest")
@@ -64,7 +64,7 @@ def test_container_ipv6(ipv6):
 def test_container_label(docker_client, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         assert "container-creator" in c.attrs["Config"]["Labels"].keys()
-        assert DOCKER_LABEL_REUSABLE_CONTAINER in c.attrs["Config"]["Labels"].keys()
+        assert LABEL_REUSABLE_CONTAINER in c.attrs["Config"]["Labels"].keys()
         assert c.attrs["Config"]["Labels"]["container-creator"] == "pytest-docker-tools"
 
         break
