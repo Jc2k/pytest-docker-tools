@@ -4,6 +4,7 @@ You have written a software application (in any language) and have packaged in a
 
  * want to reason about your environment in a similar way to a `docker-compose.yml`
  * want the environment to be automatically created and destroyed as tests run
+ * want the option to reuse previously created containers when executing tests in high frequency 
  * don't want to have to write loads of boilerplate code for creating the test environment
  * want to be able to run the tests in parallel
  * want the tests to be reliable
