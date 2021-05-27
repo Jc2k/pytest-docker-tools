@@ -3,7 +3,7 @@ from pytest_docker_tools import network
 test_network_1 = network()
 
 
-def test_network_created(docker_client, test_network_1):
+def test_network_created(enable_container_reuse, docker_client, test_network_1):
     for n in docker_client.networks.list():
         if n.id == test_network_1.id:
             # Looks like we managed to start one!

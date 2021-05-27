@@ -37,13 +37,6 @@ ipv6 = container(
 )
 
 
-@pytest.fixture()
-def enable_container_reuse(request):
-    request.config.option.reuse_containers = True
-    yield
-    request.config.option.reuse_containers = False
-
-
 def test_container_created(docker_client, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         if c.id == test_container_1.id:
