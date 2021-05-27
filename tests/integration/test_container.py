@@ -1,8 +1,6 @@
 import os
 import socket
 
-import pytest
-
 from pytest_docker_tools import build, container, fetch, image
 from pytest_docker_tools.utils import LABEL_REUSABLE_CONTAINER, wait_for_callable
 
