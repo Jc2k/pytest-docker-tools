@@ -1,6 +1,12 @@
+from pytest import UsageError
+
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
-from pytest_docker_tools.utils import wait_for_callable
+from pytest_docker_tools.utils import (
+    LABEL_REUSABLE_CONTAINER,
+    is_reusable_container,
+    wait_for_callable,
+)
 from pytest_docker_tools.wrappers import Container
 
 
@@ -8,16 +14,39 @@ from pytest_docker_tools.wrappers import Container
 def container(request, docker_client, wrapper_class, **kwargs):
     """ Docker container: image={image} """
 
+    wrapper_class = wrapper_class or Container
+
+    if request.config.option.reuse_containers:
+        if "name" in kwargs.keys():
+            name = kwargs["name"]
+            current_containers = docker_client.containers.list(ignore_removed=True)
+            for cont in current_containers:
+                if cont.name == name and is_reusable_container(cont):
+                    return wrapper_class(cont)
+        else:
+            raise UsageError(
+                "Error: Tried to use '--reuse-containers' command line argument without "
+                "setting 'name' attribute on container"
+            )
+
     timeout = kwargs.pop("timeout", 30)
 
     kwargs.update({"detach": True})
-
-    raw_container = docker_client.containers.run(**kwargs)
-    request.addfinalizer(
-        lambda: raw_container.remove(force=True) and raw_container.wait(timeout=10)
+    kwargs.update(
+        {
+            "labels": {
+                "container-creator": "pytest-docker-tools",
+                LABEL_REUSABLE_CONTAINER: str(request.config.option.reuse_containers),
+            }
+        }
     )
 
-    wrapper_class = wrapper_class or Container
+    raw_container = docker_client.containers.run(**kwargs)
+    if not request.config.option.reuse_containers:
+        request.addfinalizer(
+            lambda: raw_container.remove(force=True) and raw_container.wait(timeout=10)
+        )
+
     container = wrapper_class(raw_container)
 
     try:
