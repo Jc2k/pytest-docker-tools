@@ -11,7 +11,9 @@ def network(request, docker_client, wrapper_class, **kwargs):
 
     print(f"Creating network {name}")
     network = docker_client.networks.create(name, **kwargs)
-    request.addfinalizer(lambda: network.remove())
+
+    if not request.config.option.reuse_containers:
+        request.addfinalizer(lambda: network.remove())
 
     wrapper_class = wrapper_class or (lambda network: network)
     return wrapper_class(network)

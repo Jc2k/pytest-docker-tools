@@ -50,7 +50,9 @@ def volume(request, docker_client, wrapper_class, **kwargs):
 
     print(f"Creating volume {name}")
     volume = docker_client.volumes.create(name, **kwargs)
-    request.addfinalizer(lambda: volume.remove(True))
+
+    if not request.config.option.reuse_containers:
+        request.addfinalizer(lambda: volume.remove(True))
 
     if seeds:
         _populate_volume(docker_client, volume, seeds)
