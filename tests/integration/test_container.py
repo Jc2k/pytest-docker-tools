@@ -1,8 +1,6 @@
 import os
 import socket
 
-import pytest
-
 from pytest_docker_tools import build, container, fetch, image
 from pytest_docker_tools.utils import LABEL_REUSABLE_CONTAINER, wait_for_callable
 
@@ -35,13 +33,6 @@ ipv6 = container(
         "1234/udp": None,
     },
 )
-
-
-@pytest.fixture()
-def enable_container_reuse(request):
-    request.config.option.reuse_containers = True
-    yield
-    request.config.option.reuse_containers = False
 
 
 def test_container_created(docker_client, test_container_1):
