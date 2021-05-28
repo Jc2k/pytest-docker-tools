@@ -13,9 +13,7 @@ def test_volume1_created(docker_client, test_volume_1):
         assert False, "Looks like we failed to create a volume"
 
 
-def test_reusable_volume2_created(
-        enable_container_reuse, docker_client, test_volume_2
-):
+def test_reusable_volume2_created(enable_container_reuse, docker_client, test_volume_2):
     for v in docker_client.volumes.list():
         if v.id == test_volume_2.id:
             # Looks like we managed to start one!
