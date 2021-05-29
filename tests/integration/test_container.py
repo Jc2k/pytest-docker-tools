@@ -79,6 +79,45 @@ def test_container_reuse_create(
             c.remove(force=True)
 
 
+def test_reusable_must_be_named(request, pytester: Pytester, docker_client):
+    with pytest.raises(NotFound):
+        docker_client.containers.get("my-reusable-container")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch",
+                "memcache_image = fetch(repository='memcached:latest')",
+                "memcache = container(",
+                "    image='{memcache_image.id}',",
+                "    scope='session',",
+                "    ports={",
+                "        '11211/tcp': None,",
+                "    },",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_container="\n".join(
+            (
+                "import socket",
+                "def test_session_1(memcache):",
+                "    sock = socket.socket()",
+                "    sock.connect(('127.0.0.1', memcache.ports['11211/tcp'][0]))",
+                "    sock.close()",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+
+    with pytest.raises(NotFound):
+        docker_client.containers.get("my-reusable-container")
+
+
 def test_reusable_reused(request, pytester: Pytester, docker_client):
     def _cleanup():
         try:
