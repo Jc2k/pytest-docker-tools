@@ -6,6 +6,7 @@ import uuid
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
+from pytest_docker_tools.utils import LABEL_REUSABLE_CONTAINER, is_reusable_volume
 
 
 def _populate_volume(docker_client, volume, seeds):
@@ -53,7 +54,7 @@ def volume(request, docker_client, wrapper_class, **kwargs):
             name = kwargs["name"]
             volumes = docker_client.volumes.list()
             for volume in volumes:
-                if volume.name == name:
+                if volume.name == name and is_reusable_volume(volume):
                     return wrapper_class(volume)
         else:
             raise UsageError(
@@ -63,6 +64,15 @@ def volume(request, docker_client, wrapper_class, **kwargs):
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
     seeds = kwargs.pop("initial_content", {})
+
+    kwargs.update(
+        {
+            "labels": {
+                "creator": "pytest-docker-tools",
+                LABEL_REUSABLE_CONTAINER: str(request.config.option.reuse_containers),
+            }
+        }
+    )
 
     print(f"Creating volume {name}")
     volume = docker_client.volumes.create(name, **kwargs)

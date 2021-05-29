@@ -35,3 +35,11 @@ def tests_inside_container():
 
 def is_reusable_container(container):
     return container.attrs["Config"]["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
+
+
+def is_reusable_network(network):
+    return network.attrs["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
+
+
+def is_reusable_volume(volume):
+    return volume.attrs["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
