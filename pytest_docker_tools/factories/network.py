@@ -3,7 +3,7 @@ import uuid
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
-from pytest_docker_tools.utils import LABEL_REUSABLE_CONTAINER, is_reusable_network
+from pytest_docker_tools.utils import is_reusable_network, set_reusable_labels
 
 
 @fixture_factory()
@@ -27,14 +27,7 @@ def network(request, docker_client, wrapper_class, **kwargs):
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
 
-    kwargs.update(
-        {
-            "labels": {
-                "creator": "pytest-docker-tools",
-                LABEL_REUSABLE_CONTAINER: str(request.config.option.reuse_containers),
-            }
-        }
-    )
+    set_reusable_labels(kwargs, request)
 
     print(f"Creating network {name}")
     network = docker_client.networks.create(name, **kwargs)

@@ -43,3 +43,14 @@ def is_reusable_network(network):
 
 def is_reusable_volume(volume):
     return volume.attrs["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
+
+
+def set_reusable_labels(kwargs, request):
+    labels = kwargs.setdefault("labels", {})
+
+    labels.update(
+        {
+            "creator": "pytest-docker-tools",
+            LABEL_REUSABLE_CONTAINER: str(request.config.option.reuse_containers),
+        }
+    )

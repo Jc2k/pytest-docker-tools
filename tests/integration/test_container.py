@@ -3,6 +3,7 @@ import os
 import socket
 
 from _pytest.pytester import Pytester
+from docker.client import DockerClient
 from docker.errors import NotFound
 import pytest
 
@@ -42,7 +43,7 @@ ipv6 = container(
 )
 
 
-def test_container_created(docker_client, test_container_1):
+def test_container_created(docker_client: DockerClient, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         if c.id == test_container_1.id:
             # Looks like we managed to start one!
@@ -59,11 +60,11 @@ def test_container_ipv6(ipv6):
     wait_for_callable("Waiting for delivery confirmation", lambda: "msg" in ipv6.logs())
 
 
-def test_container_label(docker_client, test_container_1):
+def test_container_label(docker_client: DockerClient, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
-        assert "container-creator" in c.attrs["Config"]["Labels"].keys()
+        assert "creator" in c.attrs["Config"]["Labels"].keys()
         assert LABEL_REUSABLE_CONTAINER in c.attrs["Config"]["Labels"].keys()
-        assert c.attrs["Config"]["Labels"]["container-creator"] == "pytest-docker-tools"
+        assert c.attrs["Config"]["Labels"]["creator"] == "pytest-docker-tools"
 
         break
     else:
@@ -71,7 +72,10 @@ def test_container_label(docker_client, test_container_1):
 
 
 def test_container_reuse_create(
-    enable_container_reuse, docker_client, original_container_1, reused_container
+    enable_container_reuse,
+    docker_client: DockerClient,
+    original_container_1,
+    reused_container,
 ):
     assert original_container_1.id == reused_container.id
     for c in docker_client.containers.list(ignore_removed=True):
@@ -79,7 +83,9 @@ def test_container_reuse_create(
             c.remove(force=True)
 
 
-def test_reusable_must_be_named(request, pytester: Pytester, docker_client):
+def test_reusable_must_be_named(
+    request, pytester: Pytester, docker_client: DockerClient
+):
     with pytest.raises(NotFound):
         docker_client.containers.get("my-reusable-container")
 
@@ -118,7 +124,7 @@ def test_reusable_must_be_named(request, pytester: Pytester, docker_client):
         docker_client.containers.get("my-reusable-container")
 
 
-def test_reusable_reused(request, pytester: Pytester, docker_client):
+def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
             container = docker_client.containers.get("my-reusable-container")

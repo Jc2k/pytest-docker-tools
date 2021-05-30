@@ -1,4 +1,5 @@
 from _pytest.pytester import Pytester
+from docker.client import DockerClient
 from docker.errors import NotFound
 import pytest
 
@@ -7,7 +8,7 @@ from pytest_docker_tools import volume
 test_volume_1 = volume()
 
 
-def test_volume1_created(docker_client, test_volume_1):
+def test_volume1_created(docker_client: DockerClient, test_volume_1):
     for v in docker_client.volumes.list():
         if v.id == test_volume_1.id:
             # Looks like we managed to start one!
@@ -16,7 +17,9 @@ def test_volume1_created(docker_client, test_volume_1):
         assert False, "Looks like we failed to create a volume"
 
 
-def test_reusable_must_be_named(request, pytester: Pytester, docker_client):
+def test_reusable_must_be_named(
+    request, pytester: Pytester, docker_client: DockerClient
+):
     with pytest.raises(NotFound):
         docker_client.volumes.get("my-reusable-volume")
 
@@ -46,7 +49,7 @@ def test_reusable_must_be_named(request, pytester: Pytester, docker_client):
         docker_client.volumes.get("my-reusable-volume")
 
 
-def test_reusable_reused(request, pytester: Pytester, docker_client):
+def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
             volume = docker_client.volumes.get("my-reusable-volume")
