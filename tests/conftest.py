@@ -1,5 +1,7 @@
 import pytest
 
+pytest_plugins = ["pytester"]
+
 
 @pytest.fixture()
 def enable_container_reuse(request):

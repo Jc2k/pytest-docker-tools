@@ -1,10 +1,14 @@
+from _pytest.pytester import Pytester
+from docker.client import DockerClient
+from docker.errors import NotFound
+import pytest
+
 from pytest_docker_tools import volume
 
 test_volume_1 = volume()
-test_volume_2 = volume()
 
 
-def test_volume1_created(docker_client, test_volume_1):
+def test_volume1_created(docker_client: DockerClient, test_volume_1):
     for v in docker_client.volumes.list():
         if v.id == test_volume_1.id:
             # Looks like we managed to start one!
@@ -13,10 +17,125 @@ def test_volume1_created(docker_client, test_volume_1):
         assert False, "Looks like we failed to create a volume"
 
 
-def test_reusable_volume2_created(enable_container_reuse, docker_client, test_volume_2):
-    for v in docker_client.volumes.list():
-        if v.id == test_volume_2.id:
-            # Looks like we managed to start one!
-            break
-    else:
-        assert False, "Looks like we failed to create a volume"
+def test_reusable_must_be_named(
+    request, pytester: Pytester, docker_client: DockerClient
+):
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("my-reusable-volume")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'my-reusable-volume'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("my-reusable-volume")
+
+
+def test_set_own_label(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("my-reusable-volume")
+        except NotFound:
+            return
+        volume.remove()
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("my-reusable-volume")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='my-reusable-volume',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'my-reusable-volume'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    volume = docker_client.volumes.get("my-reusable-volume")
+
+    assert volume.attrs["Labels"] == {
+        "creator": "pytest-docker-tools",
+        "pytest-docker-tools.reusable-container": "True",
+        "my-label": "testtesttest",
+    }
+
+
+def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("my-reusable-volume")
+        except NotFound:
+            return
+        volume.remove()
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("my-reusable-volume")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='my-reusable-volume',",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'my-reusable-volume'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run1 = docker_client.volumes.get("my-reusable-volume")
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run2 = docker_client.volumes.get("my-reusable-volume")
+
+    assert run1.id == run2.id
