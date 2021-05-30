@@ -49,6 +49,52 @@ def test_reusable_must_be_named(
         docker_client.volumes.get("my-reusable-volume")
 
 
+def test_set_own_label(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("my-reusable-volume")
+        except NotFound:
+            return
+        volume.remove()
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("my-reusable-volume")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='my-reusable-volume',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'my-reusable-volume'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    volume = docker_client.volumes.get("my-reusable-volume")
+
+    assert volume.attrs["Labels"] == {
+        "creator": "pytest-docker-tools",
+        "pytest-docker-tools.reusable-container": "True",
+        "my-label": "testtesttest",
+    }
+
+
 def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:

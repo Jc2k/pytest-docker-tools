@@ -124,6 +124,60 @@ def test_reusable_must_be_named(
         docker_client.containers.get("my-reusable-container")
 
 
+def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get("my-reusable-container")
+        except NotFound:
+            return
+        container.remove(force=True)
+
+    with pytest.raises(NotFound):
+        docker_client.containers.get("my-reusable-container")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch",
+                "memcache_image = fetch(repository='memcached:latest')",
+                "memcache = container(",
+                "    name='my-reusable-container',",
+                "    image='{memcache_image.id}',",
+                "    scope='session',",
+                "    labels={'my-label': 'testtesttest'},",
+                "    ports={",
+                "        '11211/tcp': None,",
+                "    },",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_container="\n".join(
+            (
+                "import socket",
+                "def test_session_1(memcache):",
+                "    sock = socket.socket()",
+                "    sock.connect(('127.0.0.1', memcache.ports['11211/tcp'][0]))",
+                "    sock.close()",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    container = docker_client.containers.get("my-reusable-container")
+    assert container.attrs["Config"]["Labels"] == {
+        "creator": "pytest-docker-tools",
+        "pytest-docker-tools.reusable-container": "True",
+        "my-label": "testtesttest",
+    }
+
+
 def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
