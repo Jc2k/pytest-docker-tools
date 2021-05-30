@@ -4,7 +4,7 @@ You have written a software application (in any language) and have packaged in a
 
  * want to reason about your environment in a similar way to a `docker-compose.yml`
  * want the environment to be automatically created and destroyed as tests run
- * want the option to reuse previously created containers when executing tests in high frequency 
+ * want the option to reuse previously created resources (e.g. containers) when executing tests in high frequency 
  * don't want to have to write loads of boilerplate code for creating the test environment
  * want to be able to run the tests in parallel
  * want the tests to be reliable
@@ -938,21 +938,21 @@ def test_container_wrapper_class(apiserver):
 
 ## Reusable Containers
 
-By default the container fixture factory of Pytest-Docker-Tools will create every defined container when pytest is invoked. At the end a finalizer will remove the container to clean things up.
+By default, the container fixture factory of Pytest-Docker-Tools will create every defined container when pytest is invoked. At the end a finalizer will remove the container to clean things up.
 This behavior might not always be what you want.
 As an example you may be writing a test and want to execute it repeatedly. Normally this will always take a couple of extra  
 seconds to spawn the containers, which you might find annoying. Also, you may tend to hit the stop button more than once if one of your tests fails which will abort the normal container cleanup by the finalizers.   
 
-By using the `--reuse-containers` command line argument and specifying the `name` attribute containers will not be cleaned up after executing the tests. By using the name property the container fixture factory of Pytest-Docker-Tools 
-will try to find a container with that name and return it to your test instead of creating a new test.  
-**Attention**: Not using the `name` attribute results in creating multiple containers as usual, but without the clean up finalizer. 
+By using the `--reuse-containers` command line argument in a first execution while specifying the `name` attribute on containers, volumes and networks prevent that they will be clean up after executing the tests.
+In a consecutive run of pytest using the same command line argument the fixture factories of Pytest-Docker-Tools will try to find the previously created resources by their given name and return them to your test instead of creating them.  
+**Attention**: When using `--reuse-containers` you must set the `name` attribute, or you will run into an `UsageException`. If you don't use `--reuse-containers` setting the `name attribute is not required. 
 
 ### Notes on using Reusable Containers
 
-+ Containers created using the `--reuse-containers` option will not have a finalizer, so scopes will may not behave like they normally would
-+ When reusing containers you are responsible to clean up databases as your test data will not be deleted when your tests are finished.
-+ Each Container created by Pytest-Docker-Tools will get the following label: `container-creator: pytest-docker-tools`. When required, this can be used to search for left over 
-  containers for manual clean up by `docker ps -aq --filter "label=container-creator=pytest-docker-tools" | xargs docker rm -f`
++ Resources created using the `--reuse-containers` argument (containers, networks, volumes) will not have a finalizer, so scopes will may not behave like they normally would
++ When reusing resources you are responsible to clean them up (e.g. databases, volume data) as data written during tests will not be deleted when they are finished.
++ Each Resource Container created by Pytest-Docker-Tools will get the following label: `creator: pytest-docker-tools`. When required, this can be used to search for left over 
+  resources. For example containers can be manually cleaned up by executing `docker ps -aq --filter "label=creator=pytest-docker-tools" | xargs docker rm -f`
 
 
 ## Hacking
