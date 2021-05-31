@@ -4,7 +4,7 @@ import time
 
 from .exceptions import TimeoutError
 
-LABEL_REUSABLE_CONTAINER = "pytest-docker-tools.reusable-container"
+LABEL_REUSABLE = "pytest-docker-tools.reusable"
 
 
 def wait_for_callable(message, callable, timeout=30):
@@ -34,15 +34,15 @@ def tests_inside_container():
 
 
 def is_reusable_container(container):
-    return container.attrs["Config"]["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
+    return container.attrs["Config"]["Labels"].get(LABEL_REUSABLE) == "True"
 
 
 def is_reusable_network(network):
-    return network.attrs["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
+    return network.attrs["Labels"].get(LABEL_REUSABLE) == "True"
 
 
 def is_reusable_volume(volume):
-    return volume.attrs["Labels"].get(LABEL_REUSABLE_CONTAINER) == "True"
+    return volume.attrs["Labels"].get(LABEL_REUSABLE) == "True"
 
 
 def set_reusable_labels(kwargs, request):
@@ -51,6 +51,6 @@ def set_reusable_labels(kwargs, request):
     labels.update(
         {
             "creator": "pytest-docker-tools",
-            LABEL_REUSABLE_CONTAINER: str(request.config.option.reuse_containers),
+            LABEL_REUSABLE: str(request.config.option.reuse_containers),
         }
     )

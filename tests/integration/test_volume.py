@@ -90,7 +90,7 @@ def test_set_own_label(request, pytester: Pytester, docker_client: DockerClient)
 
     assert volume.attrs["Labels"] == {
         "creator": "pytest-docker-tools",
-        "pytest-docker-tools.reusable-container": "True",
+        "pytest-docker-tools.reusable": "True",
         "my-label": "testtesttest",
     }
 

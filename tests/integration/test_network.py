@@ -88,7 +88,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
     network = docker_client.networks.get("my-reusable-network")
     assert network.attrs["Labels"] == {
         "creator": "pytest-docker-tools",
-        "pytest-docker-tools.reusable-container": "True",
+        "pytest-docker-tools.reusable": "True",
         "my-label": "testtesttest",
     }
 

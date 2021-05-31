@@ -8,7 +8,7 @@ from docker.errors import NotFound
 import pytest
 
 from pytest_docker_tools import build, container, fetch, image
-from pytest_docker_tools.utils import LABEL_REUSABLE_CONTAINER, wait_for_callable
+from pytest_docker_tools.utils import LABEL_REUSABLE, wait_for_callable
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def test_container_ipv6(ipv6):
 def test_container_label(docker_client: DockerClient, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         assert "creator" in c.attrs["Config"]["Labels"].keys()
-        assert LABEL_REUSABLE_CONTAINER in c.attrs["Config"]["Labels"].keys()
+        assert LABEL_REUSABLE in c.attrs["Config"]["Labels"].keys()
         assert c.attrs["Config"]["Labels"]["creator"] == "pytest-docker-tools"
 
         break
@@ -173,7 +173,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
     container = docker_client.containers.get("my-reusable-container")
     assert container.attrs["Config"]["Labels"] == {
         "creator": "pytest-docker-tools",
-        "pytest-docker-tools.reusable-container": "True",
+        "pytest-docker-tools.reusable": "True",
         "my-label": "testtesttest",
     }
 
