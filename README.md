@@ -407,6 +407,40 @@ The `build` fixture factory supports all parameters that can be passed to the do
 The default scope for this factory is `session`. This means the fixture will only build or fetch once per py.test invocation. The fixture will not be triggered until a test (or other fixture) tries to use it. This means you won't waste time building an image if you aren't running the test that uses it.
 
 
+#### Caching
+
+By default images are kept between invocations. This speeds things up a lot. But when doing incremental development of an image it can leave you with lots of orphaned layers. Running `docker image prune` will throw away these layers, but as that is all untagged images it will include ones that are still valid for you current project. For large images this can really slow down your test cycle.
+
+To avoid this you need to tag your images as `docker image prune` won't throw away tagged images by default. But for this to be effective for multi-stage images, you need to tag your stages as well. To support this, pytest-docker-tools takes a `stages` parameter. For example:
+
+```python
+from pytest_docker_tools import build, image, fetch
+
+my_image = build(
+  path='db',
+  tag='localhost/myproject:latest',
+  stages={
+      'builder': 'localhost/myproject:builder'
+  }
+)
+```
+
+Under the hood this will make pytest-docker-tools first build (and tag) the `builder` stage. This is like running:
+
+```bash
+docker build --target builder --tag localhost/myproject:builder .
+```
+
+Then when that is tagged it will run the default target as before, which is like running:
+
+```bash
+docker build --tag localhost/myproject:latest .
+```
+
+This will reuse the layers generated in the previous build (where applicable).
+
+Now when you run `docker image prune` both the latest image build and the latest versions of the stages it depends on are left alone.
+
 ### Networks
 
 By default any containers you create with the `container()` fixture factory will run on your default docker network. You can create a dedicated network for your test with the `network()` fixture factory.

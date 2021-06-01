@@ -16,6 +16,22 @@ def build(request, docker_client, wrapper_class, **kwargs):
     else:
         sys.stdout.write("Building")
 
+    # If specified, build these stages and tag them first
+    # The main image build works without doing this but this allows us to preserve
+    # 'builder' stages when doing 'docker image prune'
+    stages = kwargs.pop("stages", {})
+    for stage, tag in stages.items():
+        stage_kwargs = kwargs.copy()
+        stage_kwargs["tag"] = tag
+        stage_kwargs["target"] = stage
+
+        image, logs = docker_client.images.build(**stage_kwargs)
+
+        for line in logs:
+            sys.stdout.write(".")
+            sys.stdout.flush()
+
+    # Build the image
     try:
         image, logs = docker_client.images.build(**kwargs)
 
