@@ -52,13 +52,13 @@ def test_reusable_must_be_named(
 def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
-            network = docker_client.networks.get("my-reusable-network")
+            network = docker_client.networks.get("test_set_own_labels")
         except NotFound:
             return
         network.remove()
 
     with pytest.raises(NotFound):
-        docker_client.networks.get("my-reusable-network")
+        docker_client.networks.get("test_set_own_labels")
 
     request.addfinalizer(_cleanup)
 
@@ -67,7 +67,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
             (
                 "from pytest_docker_tools import network",
                 "memcache_network = network(",
-                "    name='my-reusable-network',",
+                "    name='test_set_own_labels',",
                 "    labels={'my-label': 'testtesttest'}," ")",
             )
         )
@@ -77,7 +77,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
         test_reusable_network="\n".join(
             (
                 "def test_session_1(memcache_network):",
-                "    assert memcache_network.name == 'my-reusable-network'",
+                "    assert memcache_network.name == 'test_set_own_labels'",
             )
         )
     )
@@ -85,7 +85,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
 
-    network = docker_client.networks.get("my-reusable-network")
+    network = docker_client.networks.get("test_set_own_labels")
     assert network.attrs["Labels"] == {
         "creator": "pytest-docker-tools",
         "pytest-docker-tools.reusable": "True",
@@ -96,13 +96,13 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
 def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
-            network = docker_client.networks.get("my-reusable-network")
+            network = docker_client.networks.get("test_reusable_reused")
         except NotFound:
             return
         network.remove()
 
     with pytest.raises(NotFound):
-        docker_client.networks.get("my-reusable-network")
+        docker_client.networks.get("test_reusable_reused")
 
     request.addfinalizer(_cleanup)
 
@@ -111,7 +111,7 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
             (
                 "from pytest_docker_tools import network",
                 "memcache_network = network(",
-                "    name='my-reusable-network',",
+                "    name='test_reusable_reused',",
                 ")",
             )
         )
@@ -121,7 +121,7 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
         test_reusable_network="\n".join(
             (
                 "def test_session_1(memcache_network):",
-                "    assert memcache_network.name == 'my-reusable-network'",
+                "    assert memcache_network.name == 'test_reusable_reused'",
             )
         )
     )
@@ -129,11 +129,11 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
 
-    run1 = docker_client.networks.get("my-reusable-network")
+    run1 = docker_client.networks.get("test_reusable_reused")
 
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
 
-    run2 = docker_client.networks.get("my-reusable-network")
+    run2 = docker_client.networks.get("test_reusable_reused")
 
     assert run1.id == run2.id

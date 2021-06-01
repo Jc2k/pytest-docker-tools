@@ -46,6 +46,9 @@ ipv6 = container(
 def test_container_created(docker_client: DockerClient, test_container_1):
     for c in docker_client.containers.list(ignore_removed=True):
         if c.id == test_container_1.id:
+            assert "creator" in c.attrs["Config"]["Labels"].keys()
+            assert LABEL_REUSABLE in c.attrs["Config"]["Labels"].keys()
+            assert c.attrs["Config"]["Labels"]["creator"] == "pytest-docker-tools"
             # Looks like we managed to start one!
             break
     else:
@@ -58,17 +61,6 @@ def test_container_ipv6(ipv6):
     sock.sendto(b"msg", addr)
 
     wait_for_callable("Waiting for delivery confirmation", lambda: "msg" in ipv6.logs())
-
-
-def test_container_label(docker_client: DockerClient, test_container_1):
-    for c in docker_client.containers.list(ignore_removed=True):
-        assert "creator" in c.attrs["Config"]["Labels"].keys()
-        assert LABEL_REUSABLE in c.attrs["Config"]["Labels"].keys()
-        assert c.attrs["Config"]["Labels"]["creator"] == "pytest-docker-tools"
-
-        break
-    else:
-        assert False, "Looks like we failed to start a container"
 
 
 def test_container_reuse_create(
@@ -86,9 +78,6 @@ def test_container_reuse_create(
 def test_reusable_must_be_named(
     request, pytester: Pytester, docker_client: DockerClient
 ):
-    with pytest.raises(NotFound):
-        docker_client.containers.get("my-reusable-container")
-
     pytester.makeconftest(
         "\n".join(
             (
@@ -120,20 +109,17 @@ def test_reusable_must_be_named(
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=0, errors=1)
 
-    with pytest.raises(NotFound):
-        docker_client.containers.get("my-reusable-container")
-
 
 def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
-            container = docker_client.containers.get("my-reusable-container")
+            container = docker_client.containers.get("test_set_own_labels")
         except NotFound:
             return
         container.remove(force=True)
 
     with pytest.raises(NotFound):
-        docker_client.containers.get("my-reusable-container")
+        docker_client.containers.get("test_set_own_labels")
 
     request.addfinalizer(_cleanup)
 
@@ -143,7 +129,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
                 "from pytest_docker_tools import container, fetch",
                 "memcache_image = fetch(repository='memcached:latest')",
                 "memcache = container(",
-                "    name='my-reusable-container',",
+                "    name='test_set_own_labels',",
                 "    image='{memcache_image.id}',",
                 "    scope='session',",
                 "    labels={'my-label': 'testtesttest'},",
@@ -170,7 +156,7 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
 
-    container = docker_client.containers.get("my-reusable-container")
+    container = docker_client.containers.get("test_set_own_labels")
     assert container.attrs["Config"]["Labels"] == {
         "creator": "pytest-docker-tools",
         "pytest-docker-tools.reusable": "True",
@@ -181,13 +167,13 @@ def test_set_own_labels(request, pytester: Pytester, docker_client: DockerClient
 def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
     def _cleanup():
         try:
-            container = docker_client.containers.get("my-reusable-container")
+            container = docker_client.containers.get("test_reusable_reused")
         except NotFound:
             return
         container.remove(force=True)
 
     with pytest.raises(NotFound):
-        docker_client.containers.get("my-reusable-container")
+        docker_client.containers.get("test_reusable_reused")
 
     request.addfinalizer(_cleanup)
 
@@ -197,7 +183,7 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
                 "from pytest_docker_tools import container, fetch",
                 "memcache_image = fetch(repository='memcached:latest')",
                 "memcache = container(",
-                "    name='my-reusable-container',",
+                "    name='test_reusable_reused',",
                 "    image='{memcache_image.id}',",
                 "    scope='session',",
                 "    ports={",
@@ -223,11 +209,11 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
 
-    run1 = docker_client.containers.get("my-reusable-container")
+    run1 = docker_client.containers.get("test_reusable_reused")
 
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
 
-    run2 = docker_client.containers.get("my-reusable-container")
+    run2 = docker_client.containers.get("test_reusable_reused")
 
     assert run1.id == run2.id
