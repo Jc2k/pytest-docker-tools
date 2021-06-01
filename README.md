@@ -991,26 +991,16 @@ In a consecutive run of pytest using the same command line argument the fixture 
 
 ## Hacking
 
-Set up a virtualenv for development:
+This project usings poetry. You need a working poetry and python 3 environment before setting up a development environment for `pytest-docker-tools`. When you do you can just:
 
 ```
-$ python3 -m venv venv
-$ . venv/bin/activate
-$ pip install -U pip
-$ pip install flit -r requirements.txt
-$ flit install --symlink
+poetry install
 ```
 
-Run tests and check coverage:
+To run all the linters and tests run `./scripts/test.sh` within poetry:
 
 ```
-$ coverage run --source pytest_docker_tools -m py.test
-$ coverage html
-$ $BROWSER htmlcov/index.html
+poetry run ./scripts/tests.sh
 ```
 
-Check style:
-
-```
-$ flake8 pytest_docker_tools tests
-```
+This will run `pyupgrade`, `isort` and `black` which will modify your changes in place to match the code style we use.
