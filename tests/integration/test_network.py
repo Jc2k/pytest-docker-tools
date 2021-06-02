@@ -205,3 +205,96 @@ def test_reusable_stale(request, pytester: Pytester, docker_client: DockerClient
 
     with pytest.raises(NotFound):
         run1.reload()
+
+
+def test_reusable_stale_dependent_container(
+    request, pytester: Pytester, docker_client: DockerClient
+):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get(
+                "test_reusable_stale_dependent_container_net"
+            )
+            container.remove(force=True)
+        except NotFound:
+            pass
+
+        try:
+            network = docker_client.networks.get(
+                "test_reusable_stale_dependent_container"
+            )
+            network.remove()
+        except NotFound:
+            pass
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.networks.get("test_reusable_stale_dependent_container")
+        docker_client.containers.get("test_reusable_stale_dependent_container_net")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch, network",
+                "redis_image = fetch(repository='redis:latest')",
+                "redis_network = network(",
+                "    name='test_reusable_stale_dependent_container',",
+                ")",
+                "redis = container(",
+                "    name='test_reusable_stale_dependent_container_net',",
+                "    image='{redis_image.id}',",
+                "    network='{redis_network.name}',",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_network="\n".join(
+            (
+                "def test_session_1(redis):",
+                "    assert redis.name == 'test_reusable_stale_dependent_container_net'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run1 = docker_client.containers.get("test_reusable_stale_dependent_container_net")
+
+    # Running again immediately shouldn't recreate the container
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # This would explode if the container had been removed
+    run1.reload()
+
+    # Add a label to the network to make it stale
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch, network",
+                "redis_image = fetch(repository='redis:latest')",
+                "redis_network = network(",
+                "    name='test_reusable_stale_dependent_container',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+                "redis = container(",
+                "    name='test_reusable_stale_dependent_container_net',",
+                "    image='{redis_image.id}',",
+                "    network='{redis_network.name}',",
+                ")",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run2 = docker_client.containers.get("test_reusable_stale_dependent_container_net")
+    assert run1.id != run2.id
+
+    with pytest.raises(NotFound):
+        run1.reload()

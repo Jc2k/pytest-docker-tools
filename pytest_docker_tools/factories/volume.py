@@ -8,10 +8,39 @@ from pytest import UsageError
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.utils import (
     hash_params,
+    is_reusable_container,
     is_reusable_volume,
     set_reusable_labels,
     set_signature,
 )
+
+
+def is_using_volume(container, volume):
+    for mount in container.attrs.get("Mounts", []):
+        if mount["Type"] != "volume":
+            continue
+        if mount["Name"] == volume.name:
+            return True
+    return False
+
+
+def _remove_stale_volume(volume):
+    for container in volume.client.containers.list(ignore_removed=True):
+        if not is_using_volume(container, volume):
+            continue
+
+        if not is_reusable_container(container):
+            raise UsageError(
+                f"The volume {volume.name} is connected to a non-reusable container: {container.id}"
+            )
+
+        print(
+            f"Removing container {container.name} connected to stale volume {volume.name}"
+        )
+        container.remove(force=True)
+
+    print(f"Removing stale reusable volume: {volume.name}")
+    volume.remove()
 
 
 def _populate_volume(docker_client, volume, seeds):
@@ -72,8 +101,7 @@ def volume(request, docker_client, wrapper_class, **kwargs):
                     volume.attrs["Labels"].get("pytest-docker-tools.signature", "")
                     != signature
                 ):
-                    print(f"Removing stale reusable volume: {name}")
-                    volume.remove()
+                    _remove_stale_volume(volume)
                     break
                 return wrapper_class(volume)
         else:
