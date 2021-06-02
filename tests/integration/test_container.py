@@ -61,6 +61,55 @@ def test_container_ipv6(ipv6):
     wait_for_callable("Waiting for delivery confirmation", lambda: "msg" in ipv6.logs())
 
 
+def test_reusable_conflict(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get("test_reusable_conflict")
+        except NotFound:
+            return
+        container.remove(force=True)
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.containers.get("test_reusable_conflict")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch",
+                "memcache_image = fetch(repository='memcached:latest')",
+                "memcache = container(",
+                "    name='test_reusable_conflict',",
+                "    image='{memcache_image.id}',",
+                "    scope='session',",
+                "    ports={",
+                "        '11211/tcp': None,",
+                "    },",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_container="\n".join(
+            (
+                "def test_session_1(memcache):",
+                "    assert memcache.name == 'test_reusable_conflict'",
+            )
+        )
+    )
+
+    docker_client.images.pull(repository="memcached:latest")
+    docker_client.containers.create(
+        name="test_reusable_conflict", image="memcached:latest"
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+    result.stdout.re_match_lines([".*does not appear to be a reusable container"])
+
+
 def test_reusable_must_be_named(
     request, pytester: Pytester, docker_client: DockerClient
 ):

@@ -1,3 +1,5 @@
+from docker.errors import NotFound
+import pytest
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
@@ -25,24 +27,29 @@ def container(request, docker_client, wrapper_class, **kwargs):
     set_signature(kwargs, signature)
 
     if request.config.option.reuse_containers:
-        if "name" in kwargs.keys():
-            name = kwargs["name"]
-            current_containers = docker_client.containers.list(ignore_removed=True)
-            for cont in current_containers:
-                if cont.name != name:
-                    continue
-                if not is_reusable_container(cont):
-                    continue
-                if cont.labels.get("pytest-docker-tools.signature", "") != signature:
-                    print(f"Removing stale reusable container: {name}")
-                    cont.remove(force=True)
-                    break
-                return wrapper_class(cont)
-        else:
+        if "name" not in kwargs.keys():
             raise UsageError(
                 "Error: Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on container"
             )
+
+        name = kwargs["name"]
+
+        try:
+            current = docker_client.containers.get(name)
+        except NotFound:
+            pass
+        else:
+            if not is_reusable_container(current):
+                pytest.fail(
+                    f"Tried to reuse {name} but it does not appear to be a reusable container"
+                )
+
+            if current.labels.get("pytest-docker-tools.signature", "") == signature:
+                return wrapper_class(current)
+
+            print(f"Removing stale reusable container: {name}")
+            current.remove(force=True)
 
     timeout = kwargs.pop("timeout", 30)
 

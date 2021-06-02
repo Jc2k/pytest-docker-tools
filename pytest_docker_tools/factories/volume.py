@@ -3,6 +3,7 @@ import os
 import tarfile
 import uuid
 
+from docker.errors import NotFound
 import pytest
 from pytest import UsageError
 
@@ -90,31 +91,30 @@ def volume(request, docker_client, wrapper_class, **kwargs):
     set_signature(kwargs, signature)
 
     if request.config.option.reuse_containers:
-        if "name" in kwargs.keys():
-            name = kwargs["name"]
-            volumes = docker_client.volumes.list()
-            for volume in volumes:
-                if volume.name != name:
-                    continue
-
-                if not is_reusable_volume(volume):
-                    pytest.fail(
-                        f"Tried to reuse {volume.name} but it does not appear to be a reusable volume"
-                    )
-
-                if (
-                    volume.attrs["Labels"].get("pytest-docker-tools.signature", "")
-                    != signature
-                ):
-                    _remove_stale_volume(volume)
-                    break
-
-                return wrapper_class(volume)
-        else:
+        if "name" not in kwargs.keys():
             raise UsageError(
                 "Error: Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on volume"
             )
+
+        name = kwargs["name"]
+        try:
+            volume = docker_client.volumes.get(name)
+        except NotFound:
+            pass
+        else:
+            if not is_reusable_volume(volume):
+                pytest.fail(
+                    f"Tried to reuse {name} but it does not appear to be a reusable volume"
+                )
+
+            if (
+                volume.attrs["Labels"].get("pytest-docker-tools.signature", "")
+                == signature
+            ):
+                return wrapper_class(volume)
+
+            _remove_stale_volume(volume)
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
     seeds = kwargs.pop("initial_content", {})
