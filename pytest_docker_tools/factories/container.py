@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
@@ -16,13 +19,28 @@ def container(request, docker_client, wrapper_class, **kwargs):
 
     wrapper_class = wrapper_class or Container
 
+    kwargs.update({"detach": True})
+    set_reusable_labels(kwargs, request)
+
+    signature = hashlib.sha256(
+        json.dumps(kwargs, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    kwargs.setdefault("labels", {})["pytest-docker-tools.signature"] = signature
+
     if request.config.option.reuse_containers:
         if "name" in kwargs.keys():
             name = kwargs["name"]
             current_containers = docker_client.containers.list(ignore_removed=True)
             for cont in current_containers:
-                if cont.name == name and is_reusable_container(cont):
-                    return wrapper_class(cont)
+                if cont.name != name:
+                    continue
+                if not is_reusable_container(cont):
+                    continue
+                if cont.labels.get("pytest-docker-tools.signature", "") != signature:
+                    print(f"Removing stale reusable container: {name}")
+                    cont.remove(force=True)
+                    break
+                return wrapper_class(cont)
         else:
             raise UsageError(
                 "Error: Tried to use '--reuse-containers' command line argument without "
@@ -30,9 +48,6 @@ def container(request, docker_client, wrapper_class, **kwargs):
             )
 
     timeout = kwargs.pop("timeout", 30)
-
-    kwargs.update({"detach": True})
-    set_reusable_labels(kwargs, request)
 
     raw_container = docker_client.containers.run(**kwargs)
     if not request.config.option.reuse_containers:
