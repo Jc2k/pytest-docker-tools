@@ -75,7 +75,7 @@ def network(request, docker_client: DockerClient, wrapper_class, **kwargs):
             if check_signature(network.attrs["Labels"], signature):
                 return wrapper_class(network)
 
-           # It's ours and it is stale. Clobber it.
+            # It's ours and it is stale. Clobber it.
             _remove_stale_network(network)
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
