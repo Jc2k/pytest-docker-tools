@@ -1,3 +1,5 @@
+import hashlib
+import json
 import uuid
 
 from pytest import UsageError
@@ -10,6 +12,13 @@ from pytest_docker_tools.utils import is_reusable_network, set_reusable_labels
 def network(request, docker_client, wrapper_class, **kwargs):
     """ Docker network """
 
+    set_reusable_labels(kwargs, request)
+
+    signature = hashlib.sha256(
+        json.dumps(kwargs, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    kwargs.setdefault("labels", {})["pytest-docker-tools.signature"] = signature
+
     wrapper_class = wrapper_class or (lambda network: network)
 
     if request.config.option.reuse_containers:
@@ -17,8 +26,18 @@ def network(request, docker_client, wrapper_class, **kwargs):
             name = kwargs["name"]
             networks = docker_client.networks.list()
             for network in networks:
-                if network.name == name and is_reusable_network(network):
-                    return wrapper_class(network)
+                if network.name != name:
+                    continue
+                if not is_reusable_network(network):
+                    continue
+                if (
+                    network.attrs["Labels"].get("pytest-docker-tools.signature", "")
+                    != signature
+                ):
+                    print(f"Removing stale reusable network: {name}")
+                    network.remove()
+                    break
+                return wrapper_class(network)
         else:
             raise UsageError(
                 "Error: Tried to use '--reuse-containers' command line argument without "
@@ -26,8 +45,6 @@ def network(request, docker_client, wrapper_class, **kwargs):
             )
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
-
-    set_reusable_labels(kwargs, request)
 
     print(f"Creating network {name}")
     network = docker_client.networks.create(name, **kwargs)
