@@ -3,6 +3,7 @@ import os
 import tarfile
 import uuid
 
+import pytest
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
@@ -97,8 +98,8 @@ def volume(request, docker_client, wrapper_class, **kwargs):
                     continue
 
                 if not is_reusable_volume(volume):
-                    raise UsageError(
-                        f"Error: Tried to reuse {volume.name} but it does not appear to be a reusable volume"
+                    pytest.fail(
+                        f"Tried to reuse {volume.name} but it does not appear to be a reusable volume"
                     )
 
                 if (

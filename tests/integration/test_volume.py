@@ -54,6 +54,7 @@ def test_reusable_conflict(request, pytester: Pytester, docker_client: DockerCli
 
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=0, errors=1)
+    result.stdout.re_match_lines([".*does not appear to be a reusable volume"])
 
 
 def test_reusable_must_be_named(

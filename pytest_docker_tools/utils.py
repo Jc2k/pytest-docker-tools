@@ -46,7 +46,8 @@ def is_reusable_network(network):
 
 
 def is_reusable_volume(volume):
-    return volume.attrs["Labels"].get(LABEL_REUSABLE) == "True"
+    labels = volume.attrs["Labels"]
+    return labels and labels.get(LABEL_REUSABLE) == "True"
 
 
 def set_reusable_labels(kwargs, request):
