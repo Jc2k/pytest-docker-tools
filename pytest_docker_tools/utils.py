@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import json
 import os
 import sys
 import time
@@ -5,6 +8,7 @@ import time
 from .exceptions import TimeoutError
 
 LABEL_REUSABLE = "pytest-docker-tools.reusable"
+LABEL_SIGNATURE = "pytest-docker-tools.signature"
 
 
 def wait_for_callable(message, callable, timeout=30):
@@ -54,3 +58,21 @@ def set_reusable_labels(kwargs, request):
             LABEL_REUSABLE: str(request.config.option.reuse_containers),
         }
     )
+
+
+class Base64Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bytes):
+            return base64.b64encode(obj).decode("utf-8")
+        return super().default(obj)
+
+
+def hash_params(kwargs):
+    rendered = json.dumps(kwargs, cls=Base64Encoder, sort_keys=True).encode("utf-8")
+    signature = hashlib.sha256(rendered).hexdigest()
+    return signature
+
+
+def set_signature(kwargs, signature):
+    labels = kwargs.setdefault("labels", {})
+    labels[LABEL_SIGNATURE] = signature

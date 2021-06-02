@@ -180,6 +180,7 @@ def test_reusable_stale(request, pytester: Pytester, docker_client: DockerClient
     # Running again immediately shouldn't recreate the network
     result = pytester.runpytest("--reuse-containers")
     result.assert_outcomes(passed=1)
+    # This would explode if the network had been removed
     run1.reload()
 
     # Add a label to the network to make it stale

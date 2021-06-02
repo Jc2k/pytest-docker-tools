@@ -1,11 +1,14 @@
-import hashlib
-import json
 import uuid
 
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
-from pytest_docker_tools.utils import is_reusable_network, set_reusable_labels
+from pytest_docker_tools.utils import (
+    hash_params,
+    is_reusable_network,
+    set_reusable_labels,
+    set_signature,
+)
 
 
 @fixture_factory()
@@ -14,10 +17,8 @@ def network(request, docker_client, wrapper_class, **kwargs):
 
     set_reusable_labels(kwargs, request)
 
-    signature = hashlib.sha256(
-        json.dumps(kwargs, sort_keys=True).encode("utf-8")
-    ).hexdigest()
-    kwargs.setdefault("labels", {})["pytest-docker-tools.signature"] = signature
+    signature = hash_params(kwargs)
+    set_signature(kwargs, signature)
 
     wrapper_class = wrapper_class or (lambda network: network)
 

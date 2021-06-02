@@ -1,13 +1,12 @@
-import hashlib
-import json
-
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
 from pytest_docker_tools.utils import (
+    hash_params,
     is_reusable_container,
     set_reusable_labels,
+    set_signature,
     wait_for_callable,
 )
 from pytest_docker_tools.wrappers import Container
@@ -22,10 +21,8 @@ def container(request, docker_client, wrapper_class, **kwargs):
     kwargs.update({"detach": True})
     set_reusable_labels(kwargs, request)
 
-    signature = hashlib.sha256(
-        json.dumps(kwargs, sort_keys=True).encode("utf-8")
-    ).hexdigest()
-    kwargs.setdefault("labels", {})["pytest-docker-tools.signature"] = signature
+    signature = hash_params(kwargs)
+    set_signature(kwargs, signature)
 
     if request.config.option.reuse_containers:
         if "name" in kwargs.keys():

@@ -88,11 +88,10 @@ def test_set_own_label(request, pytester: Pytester, docker_client: DockerClient)
 
     volume = docker_client.volumes.get("my-reusable-volume")
 
-    assert volume.attrs["Labels"] == {
-        "creator": "pytest-docker-tools",
-        "pytest-docker-tools.reusable": "True",
-        "my-label": "testtesttest",
-    }
+    labels = volume.attrs["Labels"]
+    assert labels["creator"] == "pytest-docker-tools"
+    assert labels["pytest-docker-tools.reusable"] == "True"
+    assert labels["my-label"] == "testtesttest"
 
 
 def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
@@ -139,3 +138,69 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
     run2 = docker_client.volumes.get("my-reusable-volume")
 
     assert run1.id == run2.id
+
+
+def test_reusable_stale(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("test_reusable_stale")
+        except NotFound:
+            return
+        volume.remove()
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("test_reusable_stale")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='test_reusable_stale',",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'test_reusable_stale'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run1 = docker_client.volumes.get("test_reusable_stale")
+
+    # Running again immediately shouldn't recreate the volume
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # This would explode if the volume had been removed
+    run1.reload()
+
+    # Add a label to the volume to make it stale
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='test_reusable_stale',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # It should be replaced by a volume with labels on it
+    run2 = docker_client.volumes.get("test_reusable_stale")
+    run2.attrs["Labels"]["my-label"] == "testtesttest"
