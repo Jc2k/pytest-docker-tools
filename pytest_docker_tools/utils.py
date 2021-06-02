@@ -77,3 +77,7 @@ def hash_params(kwargs):
 def set_signature(kwargs, signature):
     labels = kwargs.setdefault("labels", {})
     labels[LABEL_SIGNATURE] = signature
+
+
+def check_signature(labels, signature):
+    return labels.get(LABEL_SIGNATURE, "") == signature

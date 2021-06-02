@@ -9,6 +9,7 @@ from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.utils import (
+    check_signature,
     hash_params,
     is_reusable_container,
     is_reusable_volume,
@@ -92,7 +93,7 @@ def volume(request, docker_client, wrapper_class, **kwargs):
 
     if request.config.option.reuse_containers:
         if "name" not in kwargs.keys():
-            raise UsageError(
+            pytest.fail(
                 "Error: Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on volume"
             )
@@ -103,17 +104,18 @@ def volume(request, docker_client, wrapper_class, **kwargs):
         except NotFound:
             pass
         else:
+            # Found a volume with the right name, but it doesn't have pytest-docker-tools labels
+            # We shouldn't just clobber it, its not ours. Bail out.
             if not is_reusable_volume(volume):
                 pytest.fail(
                     f"Tried to reuse {name} but it does not appear to be a reusable volume"
                 )
 
-            if (
-                volume.attrs["Labels"].get("pytest-docker-tools.signature", "")
-                == signature
-            ):
+            # It's ours, and its not stale. Reuse it!
+            if check_signature(volume.attrs["Labels"], signature):
                 return wrapper_class(volume)
 
+            # It's ours and it is stale. Clobber it.
             _remove_stale_volume(volume)
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))

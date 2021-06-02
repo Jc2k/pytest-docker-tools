@@ -5,6 +5,7 @@ from pytest import UsageError
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
 from pytest_docker_tools.utils import (
+    check_signature,
     hash_params,
     is_reusable_container,
     set_reusable_labels,
@@ -28,8 +29,8 @@ def container(request, docker_client, wrapper_class, **kwargs):
 
     if request.config.option.reuse_containers:
         if "name" not in kwargs.keys():
-            raise UsageError(
-                "Error: Tried to use '--reuse-containers' command line argument without "
+            pytest.fail(
+                "Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on container"
             )
 
@@ -40,14 +41,18 @@ def container(request, docker_client, wrapper_class, **kwargs):
         except NotFound:
             pass
         else:
+            # Found a container with the right name, but it doesn't have pytest-docker-tools labels
+            # We shouldn't just clobber it, its not ours. Bail out.
             if not is_reusable_container(current):
                 pytest.fail(
                     f"Tried to reuse {name} but it does not appear to be a reusable container"
                 )
 
-            if current.labels.get("pytest-docker-tools.signature", "") == signature:
+            # It's ours, and its not stale. Reuse it!
+            if check_signature(current.labels, signature):
                 return wrapper_class(current)
 
+            # It's ours and it is stale. Clobber it.
             print(f"Removing stale reusable container: {name}")
             current.remove(force=True)
 

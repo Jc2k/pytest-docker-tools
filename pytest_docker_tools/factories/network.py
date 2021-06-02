@@ -7,6 +7,7 @@ from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.utils import (
+    check_signature,
     hash_params,
     is_reusable_container,
     is_reusable_network,
@@ -52,7 +53,7 @@ def network(request, docker_client: DockerClient, wrapper_class, **kwargs):
 
     if request.config.option.reuse_containers:
         if "name" not in kwargs.keys():
-            raise UsageError(
+            pytest.fail(
                 "Error: Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on network"
             )
@@ -63,17 +64,18 @@ def network(request, docker_client: DockerClient, wrapper_class, **kwargs):
         except NotFound:
             pass
         else:
+            # Found a network with the right name, but it doesn't have pytest-docker-tools labels
+            # We shouldn't just clobber it, its not ours. Bail out.
             if not is_reusable_network(network):
                 pytest.fail(
                     f"Tried to reuse {network.name} but it does not appear to be a reusable network"
                 )
 
-            if (
-                network.attrs["Labels"].get("pytest-docker-tools.signature", "")
-                == signature
-            ):
+            # It's ours, and its not stale. Reuse it!
+            if check_signature(network.attrs["Labels"], signature):
                 return wrapper_class(network)
 
+           # It's ours and it is stale. Clobber it.
             _remove_stale_network(network)
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
