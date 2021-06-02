@@ -5,7 +5,6 @@ import uuid
 
 from docker.errors import NotFound
 import pytest
-from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.utils import (
@@ -27,13 +26,13 @@ def is_using_volume(container, volume):
     return False
 
 
-def _remove_stale_volume(volume):
-    for container in volume.client.containers.list(ignore_removed=True):
+def _remove_stale_volume(docker_client, volume):
+    for container in docker_client.containers.list(ignore_removed=True, all=True):
         if not is_using_volume(container, volume):
             continue
 
         if not is_reusable_container(container):
-            raise UsageError(
+            pytest.fail(
                 f"The volume {volume.name} is connected to a non-reusable container: {container.id}"
             )
 
@@ -116,7 +115,7 @@ def volume(request, docker_client, wrapper_class, **kwargs):
                 return wrapper_class(volume)
 
             # It's ours and it is stale. Clobber it.
-            _remove_stale_volume(volume)
+            _remove_stale_volume(docker_client, volume)
 
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
     seeds = kwargs.pop("initial_content", {})

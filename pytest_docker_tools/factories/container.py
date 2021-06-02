@@ -1,6 +1,5 @@
 from docker.errors import NotFound
 import pytest
-from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError

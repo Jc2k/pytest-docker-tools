@@ -22,7 +22,7 @@ def is_using_network(container, network):
 
 
 def _remove_stale_network(network):
-    for container in network.client.containers.list(ignore_removed=True):
+    for container in network.client.containers.list(ignore_removed=True, all=True):
         if not is_using_network(container, network):
             continue
 
