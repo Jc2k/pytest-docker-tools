@@ -17,6 +17,45 @@ def test_volume1_created(docker_client: DockerClient, test_volume_1):
         assert False, "Looks like we failed to create a volume"
 
 
+def test_reusable_conflict(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("test_reusable_conflict")
+        except NotFound:
+            return
+        volume.remove()
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("test_reusable_conflict")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='test_reusable_conflict'",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'test_reusable_conflict'",
+            )
+        )
+    )
+
+    docker_client.volumes.create(name="test_reusable_conflict")
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+
+
 def test_reusable_must_be_named(
     request, pytester: Pytester, docker_client: DockerClient
 ):

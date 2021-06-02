@@ -95,14 +95,19 @@ def volume(request, docker_client, wrapper_class, **kwargs):
             for volume in volumes:
                 if volume.name != name:
                     continue
+
                 if not is_reusable_volume(volume):
-                    continue
+                    raise UsageError(
+                        f"Error: Tried to reuse {volume.name} but it does not appear to be a reusable volume"
+                    )
+
                 if (
                     volume.attrs["Labels"].get("pytest-docker-tools.signature", "")
                     != signature
                 ):
                     _remove_stale_volume(volume)
                     break
+
                 return wrapper_class(volume)
         else:
             raise UsageError(
