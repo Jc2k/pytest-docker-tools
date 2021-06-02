@@ -1,6 +1,7 @@
 import uuid
 
 from docker.client import DockerClient
+import pytest
 from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
@@ -55,14 +56,19 @@ def network(request, docker_client: DockerClient, wrapper_class, **kwargs):
             for network in networks:
                 if network.name != name:
                     continue
+
                 if not is_reusable_network(network):
-                    continue
+                    pytest.fail(
+                        f"Tried to reuse {network.name} but it does not appear to be a reusable network"
+                    )
+
                 if (
                     network.attrs["Labels"].get("pytest-docker-tools.signature", "")
                     != signature
                 ):
                     _remove_stale_network(network)
                     break
+
                 return wrapper_class(network)
         else:
             raise UsageError(

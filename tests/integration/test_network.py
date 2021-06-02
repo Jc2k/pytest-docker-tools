@@ -17,6 +17,46 @@ def test_network_1_created(docker_client: DockerClient, test_network_1):
         assert False, "Looks like we failed to create a network"
 
 
+def test_reusable_conflict(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            network = docker_client.networks.get("test_reusable_conflict")
+        except NotFound:
+            return
+        network.remove()
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.networks.get("test_reusable_conflict")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import network",
+                "memcache_network = network(",
+                "    name='test_reusable_conflict'",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_network="\n".join(
+            (
+                "def test_session_1(memcache_network):",
+                "    assert memcache_network.name == 'test_reusable_conflict'",
+            )
+        )
+    )
+
+    docker_client.networks.create(name="test_reusable_conflict")
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+    result.stdout.re_match_lines([".*does not appear to be a reusable network"])
+
+
 def test_reusable_must_be_named(
     request, pytester: Pytester, docker_client: DockerClient
 ):
