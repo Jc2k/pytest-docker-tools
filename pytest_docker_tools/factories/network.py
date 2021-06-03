@@ -11,14 +11,10 @@ from pytest_docker_tools.utils import (
     hash_params,
     is_reusable_container,
     is_reusable_network,
+    is_using_network,
     set_reusable_labels,
     set_signature,
 )
-
-
-def is_using_network(container, network):
-    settings = container.attrs.get("NetworkSettings", {})
-    return network.name in settings.get("Networks", {})
 
 
 def _remove_stale_network(network):

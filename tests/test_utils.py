@@ -1,6 +1,15 @@
+from docker.models.containers import Container
+from docker.models.networks import Network
+from docker.models.volumes import Volume
 import pytest
 
-from pytest_docker_tools.utils import check_signature, hash_params, set_signature
+from pytest_docker_tools.utils import (
+    check_signature,
+    hash_params,
+    is_using_network,
+    is_using_volume,
+    set_signature,
+)
 
 
 def test_hash_params():
@@ -85,3 +94,67 @@ def test_set_signature_preserve_labels():
             "pytest-docker-tools.signature": signature,
         },
     }
+
+
+def test_is_using_network():
+    network1 = Network(attrs={"Name": "test"})
+
+    network2 = Network(attrs={"Name": "other-test"})
+
+    container = Container(attrs={"NetworkSettings": {"Networks": {"test": {}}}})
+
+    assert is_using_network(container, network1)
+    assert not is_using_network(container, network2)
+
+
+def test_is_using_network_no_networks():
+    network1 = Network(attrs={"Name": "test"})
+
+    container = Container(attrs={"NetworkSettings": {"Networks": {}}})
+
+    assert not is_using_network(container, network1)
+
+
+def test_is_using_volume():
+    volume1 = Volume(attrs={"Name": "test"})
+
+    volume2 = Volume(attrs={"Name": "other-test"})
+
+    container = Container(
+        attrs={
+            "Mounts": [
+                {
+                    "Name": "test",
+                    "Type": "volume",
+                }
+            ]
+        }
+    )
+
+    assert is_using_volume(container, volume1)
+    assert not is_using_volume(container, volume2)
+
+
+def test_is_using_volume_no_mounts():
+    volume1 = Volume(attrs={"Name": "test"})
+
+    container = Container(attrs={})
+
+    assert not is_using_volume(container, volume1)
+
+
+def test_is_using_volume_bind_mounts():
+    volume1 = Volume(attrs={"Name": "test"})
+
+    container = Container(
+        attrs={
+            "Mounts": [
+                {
+                    "Type": "bind",
+                    "Name": "test",
+                }
+            ]
+        }
+    )
+
+    assert not is_using_volume(container, volume1)

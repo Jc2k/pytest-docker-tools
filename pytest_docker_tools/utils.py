@@ -81,3 +81,17 @@ def set_signature(kwargs, signature):
 
 def check_signature(labels, signature):
     return labels.get(LABEL_SIGNATURE, "") == signature
+
+
+def is_using_network(container, network):
+    settings = container.attrs.get("NetworkSettings", {})
+    return network.name in settings.get("Networks", {})
+
+
+def is_using_volume(container, volume):
+    for mount in container.attrs.get("Mounts", []):
+        if mount["Type"] != "volume":
+            continue
+        if mount["Name"] == volume.name:
+            return True
+    return False

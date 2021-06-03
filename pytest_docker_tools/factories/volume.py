@@ -12,18 +12,10 @@ from pytest_docker_tools.utils import (
     hash_params,
     is_reusable_container,
     is_reusable_volume,
+    is_using_volume,
     set_reusable_labels,
     set_signature,
 )
-
-
-def is_using_volume(container, volume):
-    for mount in container.attrs.get("Mounts", []):
-        if mount["Type"] != "volume":
-            continue
-        if mount["Name"] == volume.name:
-            return True
-    return False
 
 
 def _remove_stale_volume(docker_client, volume):
