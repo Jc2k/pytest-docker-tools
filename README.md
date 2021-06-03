@@ -1,6 +1,6 @@
 # pytest-docker-tools
 
-You have written a software application (in any language) and have packaged in as a Docker image. Now you want to smoke test the built image or do some integration testing with other containers before releasing it. You:
+You have written a software application (in any language) and have packaged it as a Docker image. Now you want to smoke test the built image or do some integration testing with other containers before releasing it. You:
 
  * want to reason about your environment in a similar way to a `docker-compose.yml`
  * want the environment to be automatically created and destroyed as tests run
@@ -9,11 +9,11 @@ You have written a software application (in any language) and have packaged in a
  * want to be able to run the tests in parallel
  * want the tests to be reliable
 
-`pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing needs. It strives to keep your environment definition declarative, like a docker-compose.yml. It embraces py.test fixture overloading. It tries not to be too magical.
+`pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing. It strives to keep your environment definition declarative, like a docker-compose.yml. It embraces py.test fixture overloading. ~~It tries not to be too magical~~. It ended up kind of magical, but no more so that `py.test` itself.
 
 The main interface provided by this library is a set of 'fixture factories'. It provides a 'best in class' implementation of a fixture, and then allows you to treat it as a template - injecting your own configuration declaratively. You can define your fixtures in your `conftest.py` and access them from all your tests, and you can override them as needed in individual test modules.
 
-The API is straightforward and implicitly captures the interdependencies in the specification. For example, here is how it might look if you were building out a microservice and wanted to point its DNS and a mock DNS server:
+The API is straightforward and implicitly captures the dependencies between fixtures in the specification. For example, here is how it might look if you were building out a microservice and wanted to point its DNS and a mock DNS server:
 
 ```python
 # conftest.py
