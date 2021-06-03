@@ -3,7 +3,6 @@ import uuid
 from docker.client import DockerClient
 from docker.errors import NotFound
 import pytest
-from pytest import UsageError
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.utils import (
@@ -23,7 +22,7 @@ def _remove_stale_network(network):
             continue
 
         if not is_reusable_container(container):
-            raise UsageError(
+            pytest.fail(
                 f"The network {network.name} is connected to a non-reusable container: {container.id}"
             )
 
