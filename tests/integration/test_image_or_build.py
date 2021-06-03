@@ -1,10 +1,13 @@
+import os
+from unittest import mock
+
 from _pytest.pytester import Pytester
 from docker.client import DockerClient
-from unittest import mock
-import os
 
 
-def test_image_or_build_env_set(request, pytester: Pytester, docker_client: DockerClient):
+def test_image_or_build_env_set(
+    request, pytester: Pytester, docker_client: DockerClient
+):
     pytester.makeconftest(
         "\n".join(
             (
@@ -31,7 +34,9 @@ def test_image_or_build_env_set(request, pytester: Pytester, docker_client: Dock
     result.assert_outcomes(passed=1, errors=0)
 
 
-def test_image_or_build_env_not_set(request, pytester: Pytester, docker_client: DockerClient):
+def test_image_or_build_env_not_set(
+    request, pytester: Pytester, docker_client: DockerClient
+):
     # A fake build.
     pytester.makefile(
         "",
