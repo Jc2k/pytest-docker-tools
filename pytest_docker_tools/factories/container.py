@@ -1,10 +1,14 @@
-from pytest import UsageError
+from docker.errors import NotFound
+import pytest
 
 from pytest_docker_tools.builder import fixture_factory
 from pytest_docker_tools.exceptions import ContainerNotReady, TimeoutError
 from pytest_docker_tools.utils import (
+    check_signature,
+    hash_params,
     is_reusable_container,
     set_reusable_labels,
+    set_signature,
     wait_for_callable,
 )
 from pytest_docker_tools.wrappers import Container
@@ -16,23 +20,42 @@ def container(request, docker_client, wrapper_class, **kwargs):
 
     wrapper_class = wrapper_class or Container
 
+    kwargs.update({"detach": True})
+    set_reusable_labels(kwargs, request)
+
+    signature = hash_params(kwargs)
+    set_signature(kwargs, signature)
+
     if request.config.option.reuse_containers:
-        if "name" in kwargs.keys():
-            name = kwargs["name"]
-            current_containers = docker_client.containers.list(ignore_removed=True)
-            for cont in current_containers:
-                if cont.name == name and is_reusable_container(cont):
-                    return wrapper_class(cont)
-        else:
-            raise UsageError(
-                "Error: Tried to use '--reuse-containers' command line argument without "
+        if "name" not in kwargs.keys():
+            pytest.fail(
+                "Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on container"
             )
 
-    timeout = kwargs.pop("timeout", 30)
+        name = kwargs["name"]
 
-    kwargs.update({"detach": True})
-    set_reusable_labels(kwargs, request)
+        try:
+            current = docker_client.containers.get(name)
+        except NotFound:
+            pass
+        else:
+            # Found a container with the right name, but it doesn't have pytest-docker-tools labels
+            # We shouldn't just clobber it, its not ours. Bail out.
+            if not is_reusable_container(current):
+                pytest.fail(
+                    f"Tried to reuse {name} but it does not appear to be a reusable container"
+                )
+
+            # It's ours, and its not stale. Reuse it!
+            if check_signature(current.labels, signature):
+                return wrapper_class(current)
+
+            # It's ours and it is stale. Clobber it.
+            print(f"Removing stale reusable container: {name}")
+            current.remove(force=True)
+
+    timeout = kwargs.pop("timeout", 30)
 
     raw_container = docker_client.containers.run(**kwargs)
     if not request.config.option.reuse_containers:

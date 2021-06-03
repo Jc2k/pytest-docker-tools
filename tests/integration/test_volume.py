@@ -17,6 +17,46 @@ def test_volume1_created(docker_client: DockerClient, test_volume_1):
         assert False, "Looks like we failed to create a volume"
 
 
+def test_reusable_conflict(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("test_reusable_conflict")
+        except NotFound:
+            return
+        volume.remove()
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("test_reusable_conflict")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='test_reusable_conflict'",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'test_reusable_conflict'",
+            )
+        )
+    )
+
+    docker_client.volumes.create(name="test_reusable_conflict")
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+    result.stdout.re_match_lines([".*does not appear to be a reusable volume"])
+
+
 def test_reusable_must_be_named(
     request, pytester: Pytester, docker_client: DockerClient
 ):
@@ -88,11 +128,10 @@ def test_set_own_label(request, pytester: Pytester, docker_client: DockerClient)
 
     volume = docker_client.volumes.get("my-reusable-volume")
 
-    assert volume.attrs["Labels"] == {
-        "creator": "pytest-docker-tools",
-        "pytest-docker-tools.reusable": "True",
-        "my-label": "testtesttest",
-    }
+    labels = volume.attrs["Labels"]
+    assert labels["creator"] == "pytest-docker-tools"
+    assert labels["pytest-docker-tools.reusable"] == "True"
+    assert labels["my-label"] == "testtesttest"
 
 
 def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClient):
@@ -139,3 +178,237 @@ def test_reusable_reused(request, pytester: Pytester, docker_client: DockerClien
     run2 = docker_client.volumes.get("my-reusable-volume")
 
     assert run1.id == run2.id
+
+
+def test_reusable_stale(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            volume = docker_client.volumes.get("test_reusable_stale")
+        except NotFound:
+            return
+        volume.remove()
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("test_reusable_stale")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='test_reusable_stale',",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(memcache_volume):",
+                "    assert memcache_volume.name == 'test_reusable_stale'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run1 = docker_client.volumes.get("test_reusable_stale")
+
+    # Running again immediately shouldn't recreate the volume
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # This would explode if the volume had been removed
+    run1.reload()
+
+    # Add a label to the volume to make it stale
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import volume",
+                "memcache_volume = volume(",
+                "    name='test_reusable_stale',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # It should be replaced by a volume with labels on it
+    run2 = docker_client.volumes.get("test_reusable_stale")
+    run2.attrs["Labels"]["my-label"] == "testtesttest"
+
+
+def test_reusable_stale_dependent_container(
+    request, pytester: Pytester, docker_client: DockerClient
+):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get(
+                "test_reusable_stale_dependent_container_vol"
+            )
+            container.remove(force=True)
+        except NotFound:
+            pass
+
+        try:
+            volume = docker_client.volumes.get(
+                "test_reusable_stale_dependent_container"
+            )
+            volume.remove()
+        except NotFound:
+            pass
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("test_reusable_stale_dependent_container")
+        docker_client.containers.get("test_reusable_stale_dependent_container_vol")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch, volume",
+                "redis_image = fetch(repository='redis:latest')",
+                "redis_volume = volume(",
+                "    name='test_reusable_stale_dependent_container',",
+                ")",
+                "redis = container(",
+                "    name='test_reusable_stale_dependent_container_vol',",
+                "    image='{redis_image.id}',",
+                "    volumes={'{redis_volume.name}': {'bind': '/data'}},",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(redis):",
+                "    assert redis.name == 'test_reusable_stale_dependent_container_vol'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run1 = docker_client.containers.get("test_reusable_stale_dependent_container_vol")
+
+    # Running again immediately shouldn't recreate the container
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # This would explode if the container had been removed
+    run1.reload()
+
+    # Add a label to the volume to make it stale
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch, volume",
+                "redis_image = fetch(repository='redis:latest')",
+                "redis_volume = volume(",
+                "    name='test_reusable_stale_dependent_container',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+                "redis = container(",
+                "    name='test_reusable_stale_dependent_container_vol',",
+                "    image='{redis_image.id}',",
+                "    volumes={'{redis_volume.name}': {'bind': '/data'}},",
+                ")",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    run2 = docker_client.containers.get("test_reusable_stale_dependent_container_vol")
+    assert run1.id != run2.id
+
+    with pytest.raises(NotFound):
+        run1.reload()
+
+
+def test_reusable_conflicting_container(
+    request, pytester: Pytester, docker_client: DockerClient
+):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get(
+                "test_reusable_conflicting_container_vol"
+            )
+            container.remove(force=True)
+        except NotFound:
+            pass
+
+        try:
+            volume = docker_client.volumes.get("test_reusable_conflicting_container")
+            volume.remove()
+        except NotFound:
+            pass
+
+    request.addfinalizer(_cleanup)
+
+    with pytest.raises(NotFound):
+        docker_client.volumes.get("test_reusable_conflicting_container")
+        docker_client.containers.get("test_reusable_conflicting_container_vol")
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch, volume",
+                "redis_volume = volume(",
+                "    name='test_reusable_conflicting_container',",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_volume="\n".join(
+            (
+                "def test_session_1(redis_volume):",
+                "    assert redis_volume.name == 'test_reusable_conflicting_container'",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=1)
+
+    # At this stage our volume exists and we are going to create a container that
+    # *isn't managed by pytest-docker-tools*
+    # We should refuse to delete that container even when the volume is stale
+    docker_client.images.pull(repository="memcached:latest")
+    docker_client.containers.create(
+        name="test_reusable_conflicting_container_vol",
+        image="memcached:latest",
+        volumes={"test_reusable_conflicting_container": {"bind": "/data"}},
+    )
+
+    # Add a label to the volume to make the volume stale
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "from pytest_docker_tools import container, fetch, volume",
+                "redis_volume = volume(",
+                "    name='test_reusable_conflicting_container',",
+                "    labels={'my-label': 'testtesttest'},",
+                ")",
+            )
+        )
+    )
+
+    result = pytester.runpytest("--reuse-containers")
+    result.assert_outcomes(passed=0, errors=1)
+    result.stdout.re_match_lines([".*is connected to a non-reusable container.*"])

@@ -184,7 +184,7 @@ def test_session_3(memcache_session):
     sock = socket.socket()
     sock.connect(('127.0.0.1', memcache_session.ports['11211/tcp'][0]))
     sock.sendall(b'get mykey\r\n')
-    assert sock.recv(1024) == b'VALUE mykey 0 4\r\ndata\r\nEND\r\n'
+    assert sock.recv(1024).endswith(b'END\r\n')
     sock.close()
 
 def test_module_3(memcache_module):
@@ -972,20 +972,17 @@ def test_container_wrapper_class(apiserver):
 
 ## Reusable Containers
 
-By default, the container fixture factory of Pytest-Docker-Tools will create every defined container when pytest is invoked. At the end a finalizer will remove the container to clean things up.
-This behavior might not always be what you want.
-As an example you may be writing a test and want to execute it repeatedly. Normally this will always take a couple of extra  
-seconds to spawn the containers, which you might find annoying. Also, you may tend to hit the stop button more than once if one of your tests fails which will abort the normal container cleanup by the finalizers.   
+By default, the container fixture factory of pytest-docker-tools will create every defined container when pytest is invoked, and clean them up before the session ends. This ensures that your test environment is clean and your tests aren't passing because of some tate left in the containers previously.
 
-By using the `--reuse-containers` command line argument in a first execution while specifying the `name` attribute on containers, volumes and networks prevent that they will be clean up after executing the tests.
-In a consecutive run of pytest using the same command line argument the fixture factories of Pytest-Docker-Tools will try to find the previously created resources by their given name and return them to your test instead of creating them.  
-**Attention**: When using `--reuse-containers` you must set the `name` attribute, or you will run into an `UsageException`. If you don't use `--reuse-containers` setting the `name attribute is not required. 
+Sometimes this behavior might not be what you want. When you are developing iteratively and running the tests over and over again the speed of your "test cycle" (how long it takes to fix a typo and re-run the tests) becomes important. When using the `--reuse-containers` command line argument pytest-docker-tools **won't** automatically remove containers it has created. It will try to reuse them between pytest invocations. pytest-docker-tools will also keep track of if a container, volume or network has become stale (for example, if you change an image version) and automatically replace it.
+
+**Attention**: When using `--reuse-containers` you must set the `name` attribute on all your pytest-docker-tools fixtures. If you don't use `--reuse-containers` setting the `name` attribute is not required. 
 
 ### Notes on using Reusable Containers
 
-+ Resources created using the `--reuse-containers` argument (containers, networks, volumes) will not have a finalizer, so scopes will may not behave like they normally would
++ Resources created using the `--reuse-containers` argument (containers, networks, volumes) will not have a finalizer, so scopes will may not behave like they normally would. It is up to the test author to make sure there are no collisions where 2 different fixtures share a name.
 + When reusing resources you are responsible to clean them up (e.g. databases, volume data) as data written during tests will not be deleted when they are finished.
-+ Each Resource Container created by Pytest-Docker-Tools will get the following label: `creator: pytest-docker-tools`. When required, this can be used to search for left over 
++ Each Resource Container created by pytest-docker-tools will get the following label: `creator: pytest-docker-tools`. When required, this can be used to search for left over 
   resources. For example containers can be manually cleaned up by executing `docker ps -aq --filter "label=creator=pytest-docker-tools" | xargs docker rm -f`
 
 

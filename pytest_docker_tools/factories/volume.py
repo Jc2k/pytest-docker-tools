@@ -3,10 +3,38 @@ import os
 import tarfile
 import uuid
 
-from pytest import UsageError
+from docker.errors import NotFound
+import pytest
 
 from pytest_docker_tools.builder import fixture_factory
-from pytest_docker_tools.utils import is_reusable_volume, set_reusable_labels
+from pytest_docker_tools.utils import (
+    check_signature,
+    hash_params,
+    is_reusable_container,
+    is_reusable_volume,
+    is_using_volume,
+    set_reusable_labels,
+    set_signature,
+)
+
+
+def _remove_stale_volume(docker_client, volume):
+    for container in docker_client.containers.list(ignore_removed=True, all=True):
+        if not is_using_volume(container, volume):
+            continue
+
+        if not is_reusable_container(container):
+            pytest.fail(
+                f"The volume {volume.name} is connected to a non-reusable container: {container.id}"
+            )
+
+        print(
+            f"Removing container {container.name} connected to stale volume {volume.name}"
+        )
+        container.remove(force=True)
+
+    print(f"Removing stale reusable volume: {volume.name}")
+    volume.remove()
 
 
 def _populate_volume(docker_client, volume, seeds):
@@ -49,23 +77,40 @@ def volume(request, docker_client, wrapper_class, **kwargs):
     """ Docker volume """
     wrapper_class = wrapper_class or (lambda volume: volume)
 
+    set_reusable_labels(kwargs, request)
+
+    signature = hash_params(kwargs)
+    set_signature(kwargs, signature)
+
     if request.config.option.reuse_containers:
-        if "name" in kwargs.keys():
-            name = kwargs["name"]
-            volumes = docker_client.volumes.list()
-            for volume in volumes:
-                if volume.name == name and is_reusable_volume(volume):
-                    return wrapper_class(volume)
-        else:
-            raise UsageError(
+        if "name" not in kwargs.keys():
+            pytest.fail(
                 "Error: Tried to use '--reuse-containers' command line argument without "
                 "setting 'name' attribute on volume"
             )
 
+        name = kwargs["name"]
+        try:
+            volume = docker_client.volumes.get(name)
+        except NotFound:
+            pass
+        else:
+            # Found a volume with the right name, but it doesn't have pytest-docker-tools labels
+            # We shouldn't just clobber it, its not ours. Bail out.
+            if not is_reusable_volume(volume):
+                pytest.fail(
+                    f"Tried to reuse {name} but it does not appear to be a reusable volume"
+                )
+
+            # It's ours, and its not stale. Reuse it!
+            if check_signature(volume.attrs["Labels"], signature):
+                return wrapper_class(volume)
+
+            # It's ours and it is stale. Clobber it.
+            _remove_stale_volume(docker_client, volume)
+
     name = kwargs.pop("name", "pytest-{uuid}").format(uuid=str(uuid.uuid4()))
     seeds = kwargs.pop("initial_content", {})
-
-    set_reusable_labels(kwargs, request)
 
     print(f"Creating volume {name}")
     volume = docker_client.volumes.create(name, **kwargs)
