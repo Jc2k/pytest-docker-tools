@@ -328,3 +328,101 @@ def test_reusable_stale(request, pytester: Pytester, docker_client: DockerClient
     # Old container should be gone
     with pytest.raises(NotFound):
         run1.reload()
+
+
+def test_container_env_by_fixtureref(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get("test_env_by_fixture")
+        except NotFound:
+            return
+        container.remove(force=True)
+
+    with pytest.raises(NotFound):
+        docker_client.containers.get("test_env_by_fixture")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "import pytest",
+                "from pytest_docker_tools import container, fetch",
+                "from pytest_docker_tools.wrappers.fixture_ref import fixtureref",
+                "@pytest.fixture(scope='session')",
+                "def memcached_env():",
+                "    yield {'Foo': 'Bar'}",
+                "cache_image = fetch(repository='memcached:latest')",
+                "cache = container(",
+                "    name='test_env_by_fixture',",
+                "    image='{cache_image.id}',",
+                "    environment=fixtureref('memcached_env'),",
+                "    scope='session'",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_container="\n".join(
+            (
+                "def test_session_1(cache):",
+                "    assert cache.name == 'test_env_by_fixture'",
+                "    custom_env = [env for env in cache.attrs['Config']['Env'] if 'Foo' in env]",
+                "    if custom_env:",
+                "        assert custom_env[0] == 'Foo=Bar'",
+            )
+        )
+    )
+
+    result = pytester.runpytest()
+    result.assert_outcomes(passed=1)
+
+
+def test_container_env_by_lambda(request, pytester: Pytester, docker_client: DockerClient):
+    def _cleanup():
+        try:
+            container = docker_client.containers.get("test_env_by_fixture")
+        except NotFound:
+            return
+        container.remove(force=True)
+
+    with pytest.raises(NotFound):
+        docker_client.containers.get("test_env_by_fixture")
+
+    request.addfinalizer(_cleanup)
+
+    pytester.makeconftest(
+        "\n".join(
+            (
+                "import pytest",
+                "from pytest_docker_tools import container, fetch",
+                "from pytest_docker_tools.wrappers.fixture_ref import fixtureref",
+                "@pytest.fixture(scope='session')",
+                "def memcached_env():",
+                "    yield {'Foo': 'Bar'}",
+                "cache_image = fetch(repository='memcached:latest')",
+                "cache = container(",
+                "    name='test_env_by_fixture',",
+                "    image='{cache_image.id}',",
+                "    environment=lambda memcached_env: memcached_env,",
+                "    scope='session'",
+                ")",
+            )
+        )
+    )
+
+    pytester.makepyfile(
+        test_reusable_container="\n".join(
+            (
+                "def test_session_1(cache):",
+                "    assert cache.name == 'test_env_by_fixture'",
+                "    custom_env = [env for env in cache.attrs['Config']['Env'] if 'Foo' in env]",
+                "    if custom_env:",
+                "        assert custom_env[0] == 'Foo=Bar'",
+            )
+        )
+    )
+
+    result = pytester.runpytest()
+    result.assert_outcomes(passed=1)
