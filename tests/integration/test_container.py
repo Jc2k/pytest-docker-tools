@@ -330,7 +330,9 @@ def test_reusable_stale(request, pytester: Pytester, docker_client: DockerClient
         run1.reload()
 
 
-def test_container_env_by_fixtureref(request, pytester: Pytester, docker_client: DockerClient):
+def test_container_env_by_fixtureref(
+    request, pytester: Pytester, docker_client: DockerClient
+):
     def _cleanup():
         try:
             container = docker_client.containers.get("test_env_by_fixture")
@@ -379,7 +381,9 @@ def test_container_env_by_fixtureref(request, pytester: Pytester, docker_client:
     result.assert_outcomes(passed=1)
 
 
-def test_container_env_by_lambda(request, pytester: Pytester, docker_client: DockerClient):
+def test_container_env_by_lambda(
+    request, pytester: Pytester, docker_client: DockerClient
+):
     def _cleanup():
         try:
             container = docker_client.containers.get("test_env_by_fixture")

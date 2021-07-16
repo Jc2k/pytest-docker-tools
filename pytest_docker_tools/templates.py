@@ -49,7 +49,9 @@ def test_simple_find():
 
 import inspect
 from string import Formatter
-from _pytest.fixtures import getfixturemarker, FixtureFunctionMarker
+
+from _pytest.fixtures import FixtureFunctionMarker, getfixturemarker
+
 from pytest_docker_tools.wrappers.fixture_ref import fixtureref
 
 __all__ = [
