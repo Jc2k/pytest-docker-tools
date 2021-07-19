@@ -77,7 +77,7 @@ class Renderer:
             return FixtureFormatter(self.request).format(val)
         elif isinstance(val, fixtureref):
             return self.request.getfixturevalue(val.name)
-        elif isinstance(getfixturemarker(val), FixtureFunctionMarker):
+        elif getfixturemarker(val):
             return self.request.getfixturevalue(val.__name__)
         elif callable(val):
             return val(
