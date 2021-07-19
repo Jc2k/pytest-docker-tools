@@ -49,6 +49,7 @@ def test_simple_find():
 
 import inspect
 from string import Formatter
+from typing import Any
 
 from _pytest.fixtures import getfixturemarker
 
@@ -61,7 +62,7 @@ __all__ = [
 
 
 class FixtureFormatter(Formatter):
-    def __init__(self, request):
+    def __init__(self, request) -> None:
         self.request = request
 
     def get_value(self, key, args, kwargs):
@@ -69,10 +70,10 @@ class FixtureFormatter(Formatter):
 
 
 class Renderer:
-    def __init__(self, request):
+    def __init__(self, request) -> None:
         self.request = request
 
-    def visit_value(self, val):
+    def visit_value(self, val) -> Any:
         if isinstance(val, str):
             return FixtureFormatter(self.request).format(val)
         elif isinstance(val, _FixtureRef):
@@ -104,7 +105,7 @@ class Renderer:
 
 
 class FixtureFinder:
-    def visit_value(self, val):
+    def visit_value(self, val) -> Any:
         if isinstance(val, str):
             for literal_text, format_spec, conversion, _ in Formatter().parse(val):
                 if format_spec:
