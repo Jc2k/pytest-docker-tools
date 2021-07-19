@@ -51,6 +51,7 @@ import inspect
 from string import Formatter
 
 from _pytest.fixtures import getfixturemarker
+
 from pytest_docker_tools.utils import _FixtureRef
 
 __all__ = [
