@@ -52,7 +52,7 @@ from string import Formatter
 
 from _pytest.fixtures import FixtureFunctionMarker, getfixturemarker
 
-from pytest_docker_tools.wrappers.fixture_ref import fixtureref
+from pytest_docker_tools.utils import fixtureref
 
 __all__ = [
     "find_fixtures_in_params",

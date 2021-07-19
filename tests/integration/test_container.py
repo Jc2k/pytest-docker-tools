@@ -350,7 +350,7 @@ def test_container_env_by_fixtureref(
             (
                 "import pytest",
                 "from pytest_docker_tools import container, fetch",
-                "from pytest_docker_tools.wrappers.fixture_ref import fixtureref",
+                "from pytest_docker_tools.utils import fixtureref",
                 "@pytest.fixture(scope='session')",
                 "def memcached_env():",
                 "    yield {'Foo': 'Bar'}",
@@ -371,8 +371,8 @@ def test_container_env_by_fixtureref(
                 "def test_session_1(cache):",
                 "    assert cache.name == 'test_env_by_fixture'",
                 "    custom_env = [env for env in cache.attrs['Config']['Env'] if 'Foo' in env]",
-                "    if custom_env:",
-                "        assert custom_env[0] == 'Foo=Bar'",
+                "    assert custom_env",
+                "    assert custom_env[0] == 'Foo=Bar'",
             )
         )
     )
@@ -401,7 +401,7 @@ def test_container_env_by_lambda(
             (
                 "import pytest",
                 "from pytest_docker_tools import container, fetch",
-                "from pytest_docker_tools.wrappers.fixture_ref import fixtureref",
+                "from pytest_docker_tools.utils import fixtureref",
                 "@pytest.fixture(scope='session')",
                 "def memcached_env():",
                 "    yield {'Foo': 'Bar'}",
@@ -422,8 +422,8 @@ def test_container_env_by_lambda(
                 "def test_session_1(cache):",
                 "    assert cache.name == 'test_env_by_fixture'",
                 "    custom_env = [env for env in cache.attrs['Config']['Env'] if 'Foo' in env]",
-                "    if custom_env:",
-                "        assert custom_env[0] == 'Foo=Bar'",
+                "    assert custom_env",
+                "    assert custom_env[0] == 'Foo=Bar'",
             )
         )
     )

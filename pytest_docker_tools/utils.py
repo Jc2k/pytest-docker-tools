@@ -95,3 +95,15 @@ def is_using_volume(container, volume):
         if mount["Name"] == volume.name:
             return True
     return False
+
+
+class FixtureRef:
+    def __init__(self, name):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+
+fixtureref = FixtureRef
