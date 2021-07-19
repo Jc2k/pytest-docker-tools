@@ -97,7 +97,7 @@ def is_using_volume(container, volume):
     return False
 
 
-class FixtureRef:
+class _FixtureRef:
     def __init__(self, name):
         self._name = name
 
@@ -106,4 +106,4 @@ class FixtureRef:
         return self._name
 
 
-fixtureref = FixtureRef
+fxtr = _FixtureRef

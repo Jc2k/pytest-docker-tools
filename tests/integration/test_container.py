@@ -350,7 +350,7 @@ def test_container_env_by_fixtureref(
             (
                 "import pytest",
                 "from pytest_docker_tools import container, fetch",
-                "from pytest_docker_tools.utils import fixtureref",
+                "from pytest_docker_tools.utils import fxtr",
                 "@pytest.fixture(scope='session')",
                 "def memcached_env():",
                 "    yield {'Foo': 'Bar'}",
@@ -358,7 +358,7 @@ def test_container_env_by_fixtureref(
                 "cache = container(",
                 "    name='test_env_by_fixture',",
                 "    image='{cache_image.id}',",
-                "    environment=fixtureref('memcached_env'),",
+                "    environment=fxtr('memcached_env'),",
                 "    scope='session'",
                 ")",
             )
@@ -401,7 +401,6 @@ def test_container_env_by_lambda(
             (
                 "import pytest",
                 "from pytest_docker_tools import container, fetch",
-                "from pytest_docker_tools.utils import fixtureref",
                 "@pytest.fixture(scope='session')",
                 "def memcached_env():",
                 "    yield {'Foo': 'Bar'}",
@@ -452,7 +451,6 @@ def test_container_env_by_fixture(
             (
                 "import pytest",
                 "from pytest_docker_tools import container, fetch",
-                "from pytest_docker_tools.utils import fixtureref",
                 "@pytest.fixture(scope='session')",
                 "def memcached_env():",
                 "    yield {'Foo': 'Bar'}",

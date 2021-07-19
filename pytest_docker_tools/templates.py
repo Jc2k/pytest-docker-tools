@@ -50,9 +50,8 @@ def test_simple_find():
 import inspect
 from string import Formatter
 
-from _pytest.fixtures import FixtureFunctionMarker, getfixturemarker
-
-from pytest_docker_tools.utils import fixtureref
+from _pytest.fixtures import getfixturemarker
+from pytest_docker_tools.utils import _FixtureRef
 
 __all__ = [
     "find_fixtures_in_params",
@@ -75,7 +74,7 @@ class Renderer:
     def visit_value(self, val):
         if isinstance(val, str):
             return FixtureFormatter(self.request).format(val)
-        elif isinstance(val, fixtureref):
+        elif isinstance(val, _FixtureRef):
             return self.request.getfixturevalue(val.name)
         elif getfixturemarker(val):
             return self.request.getfixturevalue(val.__name__)
@@ -109,9 +108,9 @@ class FixtureFinder:
             for literal_text, format_spec, conversion, _ in Formatter().parse(val):
                 if format_spec:
                     yield format_spec.split(".")[0].split("[")[0]
-        elif isinstance(val, fixtureref):
+        elif isinstance(val, _FixtureRef):
             return val.name
-        elif isinstance(getfixturemarker(val), FixtureFunctionMarker):
+        elif getfixturemarker(val):
             return val.__name__
         elif callable(val):
             yield from inspect.getfullargspec(val)[0]
