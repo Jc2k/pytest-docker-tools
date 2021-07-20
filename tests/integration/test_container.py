@@ -349,8 +349,7 @@ def test_container_env_by_fixtureref(
         "\n".join(
             (
                 "import pytest",
-                "from pytest_docker_tools import container, fetch",
-                "from pytest_docker_tools.utils import fxtr",
+                "from pytest_docker_tools import container, fetch, fxtr",
                 "@pytest.fixture(scope='session')",
                 "def memcached_env():",
                 "    yield {'Foo': 'Bar'}",
