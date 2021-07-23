@@ -49,6 +49,11 @@ def test_simple_find():
 
 import inspect
 from string import Formatter
+from typing import Any
+
+from _pytest.fixtures import getfixturemarker
+
+from pytest_docker_tools.utils import _FixtureRef
 
 __all__ = [
     "find_fixtures_in_params",
@@ -57,7 +62,7 @@ __all__ = [
 
 
 class FixtureFormatter(Formatter):
-    def __init__(self, request):
+    def __init__(self, request) -> None:
         self.request = request
 
     def get_value(self, key, args, kwargs):
@@ -65,12 +70,16 @@ class FixtureFormatter(Formatter):
 
 
 class Renderer:
-    def __init__(self, request):
+    def __init__(self, request) -> None:
         self.request = request
 
-    def visit_value(self, val):
+    def visit_value(self, val) -> Any:
         if isinstance(val, str):
             return FixtureFormatter(self.request).format(val)
+        elif isinstance(val, _FixtureRef):
+            return self.request.getfixturevalue(val.name)
+        elif getfixturemarker(val):
+            return self.request.getfixturevalue(val.__name__)
         elif callable(val):
             return val(
                 *[
@@ -96,11 +105,15 @@ class Renderer:
 
 
 class FixtureFinder:
-    def visit_value(self, val):
+    def visit_value(self, val) -> Any:
         if isinstance(val, str):
             for literal_text, format_spec, conversion, _ in Formatter().parse(val):
                 if format_spec:
                     yield format_spec.split(".")[0].split("[")[0]
+        elif isinstance(val, _FixtureRef):
+            return val.name
+        elif getfixturemarker(val):
+            return val.__name__
         elif callable(val):
             yield from inspect.getfullargspec(val)[0]
 
