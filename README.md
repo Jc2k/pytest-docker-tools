@@ -970,7 +970,86 @@ def test_container_wrapper_class(apiserver):
 
 ```
 
-## Reusable Containers
+### Referencing Non-String Returning Fixtures
+
+You can define resources by calling the provided factories with parameters: 
+
+```python
+from pytest_docker_tools import container
+
+cache = container(
+    name='my_cache_container',
+    image='1838567e84867e8498695403067879',
+    environment={
+        'foo': 'bar',
+        'mode': 'prod'
+        }
+    )
+```
+
+As given in previous examples it's possible to resolve factory arguments dynamically by referencing fixtures in a string templates like manner  ('{<fixture_name>}'):
+
+```python
+from pytest_docker_tools import container, fetch
+
+cache_image = fetch(repository='memcached:latest')
+
+cache = container(
+    name='my_cache_container',
+    image='{cache_image.id}',
+    environment={
+        'foo': 'bar',
+        'mode': 'prod'
+        }
+    )
+```
+
+In this example the image id will be obtained from the image wrapper object that is provided by `fetch()`. However this only allows to retrieve values that are string like. E.g. it's not possible to dynamically obtain a dictionary object for the `envinronment` argument by using the string template like syntax. Doing so would only result in a stringified dictionary.
+
+To obtain non string return value from a fixture there are two options. First you can define another fixture in the same file or import the fixture. Afterwards you need to reference it as follows:
+
+```python
+import pytest
+from pytest_docker_tools import container, fetch, fxtr
+
+cache_image = fetch(repository='memcached:latest')
+
+@pytest.fixture()
+def memcached_env():
+    yield {'foo': 'bar',
+           'mode': 'prod'}
+
+cache = container(
+    name='my_cache_container',
+    image='{cache_image.id}',
+    environment=memcached_env
+    )
+```
+
+However normally working with fixtures in pytest does not require importing them in the first place. This is where the `fxtr` helper function can be used:
+
+```python
+import pytest
+from pytest_docker_tools import container, fetch, fxtr
+
+cache_image = fetch(repository='memcached:latest')
+
+@pytest.fixture()
+def memcached_env():
+    yield {'foo': 'bar',
+           'mode': 'prod'}
+
+cache = container(
+    name='my_cache_container',
+    image='{cache_image.id}',
+    environment=fxtr('memcached_env')
+    )
+```
+
+In both examples a proper dict object is handed over to the container function. For container resources this is useful to dynamically set environments or volumes based on fixtures.
+
+
+### Reusable Containers
 
 By default, the container fixture factory of pytest-docker-tools will create every defined container when pytest is invoked, and clean them up before the session ends. This ensures that your test environment is clean and your tests aren't passing because of some tate left in the containers previously.
 
@@ -978,7 +1057,7 @@ Sometimes this behavior might not be what you want. When you are developing iter
 
 **Attention**: When using `--reuse-containers` you must set the `name` attribute on all your pytest-docker-tools fixtures. If you don't use `--reuse-containers` setting the `name` attribute is not required. 
 
-### Notes on using Reusable Containers
+#### Notes on using Reusable Containers
 
 + Resources created using the `--reuse-containers` argument (containers, networks, volumes) will not have a finalizer, so scopes will may not behave like they normally would. It is up to the test author to make sure there are no collisions where 2 different fixtures share a name.
 + When reusing resources you are responsible to clean them up (e.g. databases, volume data) as data written during tests will not be deleted when they are finished.
