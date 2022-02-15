@@ -19,7 +19,7 @@ classifiers=[
 [tool.poetry.dependencies]
 python = "^3.6.1"
 pytest = ">=6.0.1"
-docker = "^4.3.1"
+docker = ">=4.3.1"
 
 [tool.poetry.plugins."pytest11"]
 docker_tools = "pytest_docker_tools.plugin"
