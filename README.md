@@ -449,6 +449,12 @@ By default any containers you create with the `container()` fixture factory will
 from pytest_docker_tools import network
 
 frontend_network = network()
+
+redis_image = fetch(repository='redis:latest')
+redis = container(
+    image='{redis_image.id}',
+    network='{frontend_network.name}',
+)
 ```
 
 The `network` fixture factory supports all parameters that can be passed to the docker-py network `create` method. See [here](https://docker-py.readthedocs.io/en/stable/networks.html#docker.models.networks.NetworkCollection.create) for them all.
