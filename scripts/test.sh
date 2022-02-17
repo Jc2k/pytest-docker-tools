@@ -6,4 +6,4 @@ python -m black tests pytest_docker_tools
 python -m isort tests pytest_docker_tools
 python -m black tests pytest_docker_tools --check --diff
 python -m flake8 tests pytest_docker_tools
-python -m pytest
+python -m pytest tests/

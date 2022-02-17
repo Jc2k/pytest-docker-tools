@@ -134,7 +134,7 @@ jobs:
 
     - name: Run pytest
       shell: bash
-      run: poetry run coverage run -m pytest
+      run: poetry run coverage run -m pytest tests/
 
     - name: Upload coverage to Codecov
       shell: bash
