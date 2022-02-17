@@ -2,12 +2,12 @@
 
 You have written a software application (in any language) and have packaged it as a Docker image. Now you want to smoke test the built image or do some integration testing with other containers before releasing it. You:
 
- * want to reason about your environment in a similar way to a `docker-compose.yml`
- * want the environment to be automatically created and destroyed as tests run
- * want the option to reuse previously created resources (e.g. containers) when executing tests in high frequency 
- * don't want to have to write loads of boilerplate code for creating the test environment
- * want to be able to run the tests in parallel
- * want the tests to be reliable
+* want to reason about your environment in a similar way to a docker-compose.yml`
+* want the environment to be automatically created and destroyed as tests run
+* want the option to reuse previously created resources (e.g. containers) when executing tests in high frequency
+* don't want to have to write loads of boilerplate code for creating the test environment
+* want to be able to run the tests in parallel
+* want the tests to be reliable
 
 `pytest-docker-tools` is a set of opinionated helpers for creating `py.test` fixtures for your smoke testing and integration testing. It strives to keep your environment definition declarative, like a docker-compose.yml. It embraces py.test fixture overloading. ~~It tries not to be too magical~~. It ended up kind of magical, but no more so that `py.test` itself.
 
@@ -74,14 +74,14 @@ def test_my_frobulator_works_after_restart(apiserver):
 
 In this example all the dependencies will be resolved in order and once per session:
 
- * The latest `redis:latest` will be fetched
- * A container image will be build from the `Dockerfile` in the `db` folder.
+* The latest `redis:latest` will be fetched
+* A container image will be build from the `Dockerfile` in the `db` folder.
 
 Then once per test:
 
- * A new volume will be created
- * A new 'backend' container will be created from `redis:latest`. It will be attached to the new volume.
- * A new 'frontend' container will be created from the freshly built container. It will be given the IP if the backend via an environment variable. Port 3679 in the container will be exposed as an ephemeral port on the host.
+* A new volume will be created
+* A new 'backend' container will be created from `redis:latest`. It will be attached to the new volume.
+* A new 'frontend' container will be created from the freshly built container. It will be given the IP if the backend via an environment variable. Port 3679 in the container will be exposed as an ephemeral port on the host.
 
 The test can then run and access the container via its ephemeral high port. At the end of the test the environment will be thrown away.
 
@@ -101,7 +101,6 @@ def test_api_server(apiclient):
     assert response.status == 200
     assert json.loads(response.read()) == {'result': '127.0.0.1'}
 ```
-
 
 ## Scope
 
@@ -195,7 +194,6 @@ def test_module_3(memcache_module):
     sock.close()
 ```
 
-
 ## Parallelism
 
 Integration and smoke tests are often slow, but a lot of time is spent waiting. So running tests in parallel is a great way to speed them up. `pytest-docker-tools` avoids creating resource names that could collide. It also makes it easy to not care what port your service is bound to. This means its a great fit for use with `pytest-xdist`.
@@ -238,7 +236,6 @@ scheduling tests via LoadScheduling
 ...........                                                                              [100%]
 ================================= 100 passed in 70.08 seconds ==================================
 ```
-
 
 ## Factories Reference
 
@@ -368,7 +365,6 @@ def test_connect_my_service(apiserver):
     assert apiserver.ports['8080/tcp'][0] != 8080
 ```
 
-
 #### Logs
 
 You can inspect the logs of your container with the logs method:
@@ -387,7 +383,6 @@ def test_logs(redis):
     assert 'oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo' in redis.logs()
 ```
 
-
 ### Images
 
 To pull an image from your default repository use the `fetch` fixture factory. To build an image from local source use the `build` fixture factory. If you are smoke testing an artifact already built locally you can use the `image` fixture factory to reference it.
@@ -405,7 +400,6 @@ my_image_2 = build(
 The `build` fixture factory supports all parameters that can be passed to the docker-py `build` method. See [here](https://docker-py.readthedocs.io/en/stable/images.html#docker.models.images.ImageCollection.build) for them all. The `fetch` fixture factory supports all parameters that can be passed to the docker-py `pull` method. See [here](https://docker-py.readthedocs.io/en/stable/images.html#docker.models.images.ImageCollection.pull) for them all.
 
 The default scope for this factory is `session`. This means the fixture will only build or fetch once per py.test invocation. The fixture will not be triggered until a test (or other fixture) tries to use it. This means you won't waste time building an image if you aren't running the test that uses it.
-
 
 #### Caching
 
@@ -446,7 +440,7 @@ Now when you run `docker image prune` both the latest image build and the latest
 By default any containers you create with the `container()` fixture factory will run on your default docker network. You can create a dedicated network for your test with the `network()` fixture factory.
 
 ```python
-from pytest_docker_tools import network
+from pytest_docker_tools import container, fetch, network
 
 frontend_network = network()
 
@@ -462,7 +456,6 @@ The `network` fixture factory supports all parameters that can be passed to the 
 The default scope for this factory is `function`. This means a new network will be created for each test that is executed.
 
 The network will be removed after the test using it has finished.
-
 
 ### Volumes
 
@@ -513,7 +506,6 @@ The `minio_volume` container will be created with an empty folder (`bucket-1`) a
 
 The default scope for this factory is `function`. This means a new volume will be created for each test that is executed. The volume will be removed after the test using it has finished.
 
-
 ## Fixtures
 
 ### docker_client
@@ -532,14 +524,13 @@ def test_container_created(docker_client, fakedns):
 
 Take care when using the `docker_client` directly:
 
- * Obviously resources created imperatively via the API won't be removed at the end of the test automatically
- * It's easy to break xdist compatibility
-   * Always use `ignore_removed` with `docker_client.containers.list()` - it is racy without
-   * It's easy to find other instances of the resources you are working with (created in other workers). Be mindful of this!
- * Don't take destructive action - someone could be running tests on a machine with other (non-test) containers running, collateral damage is easy and should be avoided.
+* Obviously resources created imperatively via the API won't be removed at the end of the test automatically
+* It's easy to break xdist compatibility
+  * Always use `ignore_removed` with `docker_client.containers.list()` - it is racy without
+  * It's easy to find other instances of the resources you are working with (created in other workers). Be mindful of this!
+* Don't take destructive action - someone could be running tests on a machine with other (non-test) containers running, collateral damage is easy and should be avoided.
 
 This is the fixture used by our fixture factories. This means if you define a `docker_client` fixture of your own then the tests will use that instead.
-
 
 ## Tips and tricks
 
@@ -568,13 +559,12 @@ def test_image(image):
     assert image.attrs['Os'] == 'linux'
 ```
 
-
 ### Network differences between dev env and CI
 
 Another common difference between your dev environment and your CI environment might be that your tests end up running in Docker on your CI. If you bind-mount your `docker.sock` then your tests might end up running on the same container network as the containers you are testing, and unable to access any port you are mapping to the host box. In otherwords:
 
- * On your dev machine your tests might access locahost:8000 to access your test instance (ports mapped to host)
- * On your CI machine they might need to access 172.16.0.5:8000 to access your test instance
+* On your dev machine your tests might access locahost:8000 to access your test instance (ports mapped to host)
+* On your CI machine they might need to access 172.16.0.5:8000 to access your test instance
 
 The container object has a `get_addr` helper which will return the right thing depending on the environment it is in.
 
@@ -622,7 +612,6 @@ def test_connect_my_service(memcache):
     ip, port = memcache.get_addr('11211/tcp')
     # ... connect to ip:port ...
 ```
-
 
 ### Client fixtures
 
@@ -683,7 +672,6 @@ def test_api_server(apiclient):
 ```
 
 In this example, any test that uses the `hpfeeds_client` fixture will get a properly configure client connected to a broker running in a Docker container on an ephemeral high port. When the test finishes the client will cleanly disconnect, and the docker container will be thrown away.
-
 
 ### Fixture overloading
 
@@ -757,7 +745,6 @@ def test_api_server(apiclient):
 
 Here we have redefined the fakedns container locally in `test_smoketest_alternate`. It is able to use the `fakedns_image` fixture we defined in `conftest.py`. More crucially though, in `test_smoketest_alternate.py` when we use the core `apiclient` fixture it actually pulls in the local definition of `fakedns` and not the one from `conftest.py`! You don't have to redefine anything else. It just works.
 
-
 #### Injecting fixture configuration through fixtures
 
 You can pull in normal py.test fixtures from your fixture factory too. This means we can use fixture overloading and pass in config. In your `conftest.py`:
@@ -830,7 +817,6 @@ def test_api_server(apiclient):
 ```
 
 Your `api_server` container (and its `redis` backend) will be built as normal, only in this one test module it will use its sqlite backend.
-
 
 ### Fixture parameterisation
 
@@ -906,7 +892,6 @@ def test_api_server(apiclient):
 
 This test will be invoked twice - once against the memory backend, and once against the sqlite backend.
 
-
 ### Fixture wrappers
 
 You can wrap your fixtures with a `wrapper_class`. This allows you to add helper methods to fixtures for use in your tests. In the case of the `container` fixture factory you can also implement `ready()` to add additional container readyness checks.
@@ -978,7 +963,7 @@ def test_container_wrapper_class(apiserver):
 
 ### Referencing Non-String Returning Fixtures
 
-You can define resources by calling the provided factories with parameters: 
+You can define resources by calling the provided factories with parameters:
 
 ```python
 from pytest_docker_tools import container
@@ -1054,22 +1039,20 @@ cache = container(
 
 In both examples a proper dict object is handed over to the container function. For container resources this is useful to dynamically set environments or volumes based on fixtures.
 
-
 ### Reusable Containers
 
 By default, the container fixture factory of pytest-docker-tools will create every defined container when pytest is invoked, and clean them up before the session ends. This ensures that your test environment is clean and your tests aren't passing because of some tate left in the containers previously.
 
 Sometimes this behavior might not be what you want. When you are developing iteratively and running the tests over and over again the speed of your "test cycle" (how long it takes to fix a typo and re-run the tests) becomes important. When using the `--reuse-containers` command line argument pytest-docker-tools **won't** automatically remove containers it has created. It will try to reuse them between pytest invocations. pytest-docker-tools will also keep track of if a container, volume or network has become stale (for example, if you change an image version) and automatically replace it.
 
-**Attention**: When using `--reuse-containers` you must set the `name` attribute on all your pytest-docker-tools fixtures. If you don't use `--reuse-containers` setting the `name` attribute is not required. 
+**Attention**: When using `--reuse-containers` you must set the `name` attribute on all your pytest-docker-tools fixtures. If you don't use `--reuse-containers` setting the `name` attribute is not required.
 
 #### Notes on using Reusable Containers
 
-+ Resources created using the `--reuse-containers` argument (containers, networks, volumes) will not have a finalizer, so scopes will may not behave like they normally would. It is up to the test author to make sure there are no collisions where 2 different fixtures share a name.
-+ When reusing resources you are responsible to clean them up (e.g. databases, volume data) as data written during tests will not be deleted when they are finished.
-+ Each Resource Container created by pytest-docker-tools will get the following label: `creator: pytest-docker-tools`. When required, this can be used to search for left over 
+* Resources created using the `--reuse-containers` argument (containers, networks, volumes) will not have a finalizer, so scopes will may not behave like they normally would. It is up to the test author to make sure there are no collisions where 2 different fixtures share a name.
+* When reusing resources you are responsible to clean them up (e.g. databases, volume data) as data written during tests will not be deleted when they are finished.
+* Each Resource Container created by pytest-docker-tools will get the following label: `creator: pytest-docker-tools`. When required, this can be used to search for left over
   resources. For example containers can be manually cleaned up by executing `docker ps -aq --filter "label=creator=pytest-docker-tools" | xargs docker rm -f`
-
 
 ## Hacking
 
