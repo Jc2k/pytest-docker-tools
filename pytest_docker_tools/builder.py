@@ -21,7 +21,7 @@ def build_fixture_function(callable, scope, wrapper_class, kwargs):
     import pytest
 
     def {name}({fixtures_str}):
-        \'\'\'
+        r\'\'\'
         {docstring}
         \'\'\'
         real_kwargs = resolve_fixtures_in_params(request, kwargs)
