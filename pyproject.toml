@@ -59,6 +59,9 @@ zip-safe = false
 include = ["pytest_docker_tools*"]
 namespaces = false
 
+[tool.setuptools.package-data]
+pytest_docker_tools = ["context/scratch/Dockerfile"]
+
 [tool.distutils.bdist_wheel]
 universal = true
 
