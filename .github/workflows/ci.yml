@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Check out code from GitHub
       uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
     - name: Set up Python
       uses: actions/setup-python@v5.1.0
       with:
@@ -27,6 +29,34 @@ jobs:
         pip install . .[test]
     - name: Lint/test with pre-commit
       run: SKIP=no-commit-to-branch pre-commit run --all-files
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Run tests
+        # For example, using `pytest`
+        run: uv run pytest tests
 
   # Make sure commit messages follow the conventional commits convention:
   # https://www.conventionalcommits.org
@@ -44,6 +74,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs:
       - lint
+      - tests
       - commitlint
     concurrency: release
     permissions:
