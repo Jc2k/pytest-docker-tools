@@ -32,7 +32,6 @@ jobs:
 
   tests:
     name: tests
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version:
@@ -40,6 +39,11 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
