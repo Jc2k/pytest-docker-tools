@@ -52,9 +52,12 @@ omit = ["tests/*"]
 
 [tool.setuptools]
 include-package-data = true
-packages = ["pytest_docker_tools"]
 platforms = ["any"]
 zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["pytest_docker_tools*"]
+namespaces = false
 
 [tool.distutils.bdist_wheel]
 universal = true
