@@ -502,7 +502,7 @@ def test_volume_is_seeded(minio):
     assert files['data/bucket-1'] == None
 ```
 
-The `minio_volume` container will be created with an empty folder (`bucket-1`) and a text file called `example.txt` in a seperate folder called `bucket-2`.
+The `minio_volume` container will be created with an empty folder (`bucket-1`) and a text file called `example.txt` in a separate folder called `bucket-2`.
 
 The default scope for this factory is `function`. This means a new volume will be created for each test that is executed. The volume will be removed after the test using it has finished.
 
@@ -563,7 +563,7 @@ def test_image(image):
 
 Another common difference between your dev environment and your CI environment might be that your tests end up running in Docker on your CI. If you bind-mount your `docker.sock` then your tests might end up running on the same container network as the containers you are testing, and unable to access any port you are mapping to the host box. In otherwords:
 
-* On your dev machine your tests might access locahost:8000 to access your test instance (ports mapped to host)
+* On your dev machine your tests might access localhost:8000 to access your test instance (ports mapped to host)
 * On your CI machine they might need to access 172.16.0.5:8000 to access your test instance
 
 The container object has a `get_addr` helper which will return the right thing depending on the environment it is in.
@@ -894,7 +894,7 @@ This test will be invoked twice - once against the memory backend, and once agai
 
 ### Fixture wrappers
 
-You can wrap your fixtures with a `wrapper_class`. This allows you to add helper methods to fixtures for use in your tests. In the case of the `container` fixture factory you can also implement `ready()` to add additional container readyness checks.
+You can wrap your fixtures with a `wrapper_class`. This allows you to add helper methods to fixtures for use in your tests. In the case of the `container` fixture factory you can also implement `ready()` to add additional container readiness checks.
 
 In previous tests we've created an entire test client fixture. With `wrapper_class` we could hang this convenience method off the fixture itself instead:
 
@@ -995,7 +995,7 @@ cache = container(
     )
 ```
 
-In this example the image id will be obtained from the image wrapper object that is provided by `fetch()`. However this only allows to retrieve values that are string like. E.g. it's not possible to dynamically obtain a dictionary object for the `envinronment` argument by using the string template like syntax. Doing so would only result in a stringified dictionary.
+In this example the image id will be obtained from the image wrapper object that is provided by `fetch()`. However this only allows to retrieve values that are string like. E.g. it's not possible to dynamically obtain a dictionary object for the `environment` argument by using the string template like syntax. Doing so would only result in a stringified dictionary.
 
 To obtain non string return value from a fixture there are two options. First you can define another fixture in the same file or import the fixture. Afterwards you need to reference it as follows:
 
