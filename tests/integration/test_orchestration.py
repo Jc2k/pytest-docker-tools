@@ -33,7 +33,7 @@ mycontainer = container(
 
 
 def test_related_container_created(docker_client, mycontainer):
-    """ Creating mycontainer should pull in redis0 because we depend on it to calculate an env variable """
+    """Creating mycontainer should pull in redis0 because we depend on it to calculate an env variable"""
     backend_ip = mycontainer.env["REDIS_IP"]
     for c in docker_client.containers.list(ignore_removed=True):
         if "MARKER=redis0-0sider" in c.attrs["Config"]["Env"] and backend_ip in str(
@@ -45,12 +45,12 @@ def test_related_container_created(docker_client, mycontainer):
 
 
 def test_gets_related_container_ip(redis0, mycontainer):
-    """ The lambda we passed to environment should have been executed with the redis fixture value """
+    """The lambda we passed to environment should have been executed with the redis fixture value"""
     assert mycontainer.env["REDIS_IP"] == redis0.ips.primary
 
 
 def test_gets_volume(myvolume, mycontainer):
-    """ The container should have a volume configured pointing at our fixturized volume """
+    """The container should have a volume configured pointing at our fixturized volume"""
     for mount in mycontainer.attrs["Mounts"]:
         if mount["Name"] == myvolume.name:
             break
@@ -59,10 +59,10 @@ def test_gets_volume(myvolume, mycontainer):
 
 
 def test_gets_network(mynetwork, mycontainer):
-    """ The container should be attached to our fixturized network """
+    """The container should be attached to our fixturized network"""
     assert mynetwork.name in mycontainer.ips
 
 
 def test_gets_dns_ip(redis0, mycontainer):
-    """ The container should be attached to our fixturized network """
+    """The container should be attached to our fixturized network"""
     assert redis0.ips.primary == mycontainer.attrs["HostConfig"]["Dns"][0]

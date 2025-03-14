@@ -16,7 +16,7 @@ from pytest_docker_tools.wrappers import Container
 
 @fixture_factory()
 def container(request, docker_client, wrapper_class, **kwargs):
-    """ Docker container: image={image} """
+    """Docker container: image={image}"""
 
     wrapper_class = wrapper_class or Container
 

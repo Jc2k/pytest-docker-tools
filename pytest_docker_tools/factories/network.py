@@ -37,7 +37,7 @@ def _remove_stale_network(network):
 
 @fixture_factory()
 def network(request, docker_client: DockerClient, wrapper_class, **kwargs):
-    """ Docker network """
+    """Docker network"""
 
     set_reusable_labels(kwargs, request)
 

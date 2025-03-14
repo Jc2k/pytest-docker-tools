@@ -38,7 +38,7 @@ def wait_for_callable(message: str, func: Callable, timeout: int = 30) -> None:
 
 
 def tests_inside_container() -> bool:
-    """ Returns True if tests are running inside a Linux container """
+    """Returns True if tests are running inside a Linux container"""
 
     return os.path.isfile("/.dockerenv") or os.path.isfile("/run/.containerenv")
 

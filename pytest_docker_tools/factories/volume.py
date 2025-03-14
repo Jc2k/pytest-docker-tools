@@ -74,7 +74,7 @@ def _populate_volume(docker_client, volume, seeds):
 
 @fixture_factory()
 def volume(request, docker_client, wrapper_class, **kwargs):
-    """ Docker volume """
+    """Docker volume"""
     wrapper_class = wrapper_class or (lambda volume: volume)
 
     set_reusable_labels(kwargs, request)
