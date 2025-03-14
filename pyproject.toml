@@ -59,3 +59,7 @@ universal = true
 version_toml = [
     "pyproject.toml:project.version",
 ]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
