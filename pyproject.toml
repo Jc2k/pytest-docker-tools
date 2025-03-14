@@ -47,7 +47,7 @@ omit = ["tests/*"]
 
 [tool.setuptools]
 include-package-data = true
-packages = ["aiojellyfin"]
+packages = ["pytest_docker_tools"]
 platforms = ["any"]
 zip-safe = false
 
