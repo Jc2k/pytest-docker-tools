@@ -2,22 +2,19 @@
 
 
 
-## v0.0.2 (2025-03-14)
-
-### Fix
-
-* fix: version number must be preset ([`46363d2`](https://github.com/Jc2k/pytest-docker-tools/commit/46363d27f84d0bc3c8a968b041c0d5ce729bfdea))
-
-* fix: don&#39;t check in version number ([`1b5adf1`](https://github.com/Jc2k/pytest-docker-tools/commit/1b5adf1411f0a753af5451cec747f5aeda84dfc1))
-
-
-## v0.0.1 (2025-03-14)
+## v3.1.4 (2025-03-14)
 
 ### Chore
 
 * chore: add codespell for ci lint ([`89e5369`](https://github.com/Jc2k/pytest-docker-tools/commit/89e5369c94386fbcc2a81a767b48128e94cfe70f))
 
 ### Fix
+
+* fix: correct classifiers ([`78318e9`](https://github.com/Jc2k/pytest-docker-tools/commit/78318e9dc053b1462028c50ced82cdf003f0a35e))
+
+* fix: version number must be preset ([`46363d2`](https://github.com/Jc2k/pytest-docker-tools/commit/46363d27f84d0bc3c8a968b041c0d5ce729bfdea))
+
+* fix: don&#39;t check in version number ([`1b5adf1`](https://github.com/Jc2k/pytest-docker-tools/commit/1b5adf1411f0a753af5451cec747f5aeda84dfc1))
 
 * fix: get all lints passing ([`7556579`](https://github.com/Jc2k/pytest-docker-tools/commit/7556579ab941837d5b7f76344a7a2dd9bc082ada))
 
