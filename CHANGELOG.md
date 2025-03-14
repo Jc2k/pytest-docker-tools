@@ -2,6 +2,15 @@
 
 
 
+## v0.0.2 (2025-03-14)
+
+### Fix
+
+* fix: version number must be preset ([`46363d2`](https://github.com/Jc2k/pytest-docker-tools/commit/46363d27f84d0bc3c8a968b041c0d5ce729bfdea))
+
+* fix: don&#39;t check in version number ([`1b5adf1`](https://github.com/Jc2k/pytest-docker-tools/commit/1b5adf1411f0a753af5451cec747f5aeda84dfc1))
+
+
 ## v0.0.1 (2025-03-14)
 
 ### Chore
@@ -31,6 +40,11 @@
 ### Unknown
 
 * Create LICENSE ([`5853f9b`](https://github.com/Jc2k/pytest-docker-tools/commit/5853f9b67511d76a3bf0d607f4d730b6bac0b969))
+
+
+## v3.1.3 (2022-02-17)
+
+### Unknown
 
 * Version bump ([`62935c9`](https://github.com/Jc2k/pytest-docker-tools/commit/62935c9bcf40ccca1d79e4941517b2521006c147))
 
