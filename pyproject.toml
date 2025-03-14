@@ -41,6 +41,7 @@ dev = [
     "ruff>=0.10.0",
     "pre-commit==3.7.1",
     "pre-commit-hooks==4.6.0",
+    "codespell==2.3.0",
 ]
 
 [tool.coverage.run]
