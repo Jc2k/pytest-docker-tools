@@ -2,6 +2,19 @@
 
 
 
+## v3.1.5 (2025-03-14)
+
+### Fix
+
+* fix: use setuptools to find correct package/module files ([`70cb74b`](https://github.com/Jc2k/pytest-docker-tools/commit/70cb74bf2efe6c27140639a3a7e53415850b9d69))
+
+### Unknown
+
+* Merge pull request #43 from maltevesper/feature/safeDocstringTemplate
+
+fix: make docstring escape sequence proof ([`80ed237`](https://github.com/Jc2k/pytest-docker-tools/commit/80ed2379907ce1cbc81a7a70c7209d2d3f44a930))
+
+
 ## v3.1.4 (2025-03-14)
 
 ### Chore
@@ -35,6 +48,11 @@
 * fix: modernize ci ([`b00c4f9`](https://github.com/Jc2k/pytest-docker-tools/commit/b00c4f967f16d868648ffcf9bdd9e2c0468d99ef))
 
 ### Unknown
+
+* Make docstring escape sequence proof
+
+Matters on Windows, where the path can contain backslashes, i.e.
+C:\User\... -&gt; unknown unicode escape sequence. ([`4ae2274`](https://github.com/Jc2k/pytest-docker-tools/commit/4ae22743d5a1dc71fd1d4e32b7ab912195247d59))
 
 * Create LICENSE ([`5853f9b`](https://github.com/Jc2k/pytest-docker-tools/commit/5853f9b67511d76a3bf0d607f4d730b6bac0b969))
 
