@@ -9,7 +9,6 @@ dependencies = [
     "docker>=4.3.1",
 ]
 name = "pytest_docker_tools"
-version = "0.0.1"
 description = "Docker integration tests for pytest"
 readme = "README.md"
 keywords = [
