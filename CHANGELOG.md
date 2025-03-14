@@ -2,6 +2,13 @@
 
 
 
+## v3.1.6 (2025-03-14)
+
+### Fix
+
+* fix: include missing Dockerfile ([`8995902`](https://github.com/Jc2k/pytest-docker-tools/commit/89959023844a2d2b4c9c6622475dca255d9a28ea))
+
+
 ## v3.1.5 (2025-03-14)
 
 ### Fix
