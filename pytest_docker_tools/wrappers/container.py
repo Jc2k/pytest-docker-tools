@@ -92,6 +92,8 @@ class Container:
         ports = self._container.attrs["NetworkSettings"]["Ports"]
         for port, listeners in ports.items():
             if not listeners:
+                if port in (self._container.attrs["HostConfig"]["PortBindings"] or []):
+                    return False
                 continue
 
             port, proto = port.split("/")
