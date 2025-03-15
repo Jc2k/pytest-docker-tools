@@ -2,6 +2,13 @@
 
 
 
+## v3.1.7 (2025-03-15)
+
+### Fix
+
+* fix: container.ready() race condition, when exposed ports is not available yet (#49) ([`7c847d8`](https://github.com/Jc2k/pytest-docker-tools/commit/7c847d8f871b1936aa580b45164f8cbf8dd7c75f))
+
+
 ## v3.1.6 (2025-03-14)
 
 ### Fix
