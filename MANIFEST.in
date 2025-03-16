@@ -1,0 +1,1 @@
+include pytest_docker_tools/context/*/Dockerfile
