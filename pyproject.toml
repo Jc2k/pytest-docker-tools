@@ -60,7 +60,7 @@ include = ["pytest_docker_tools*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-pytest_docker_tools = ["context/scratch/Dockerfile"]
+pytest_docker_tools = ["contexts/scratch/Dockerfile"]
 
 [tool.distutils.bdist_wheel]
 universal = true
