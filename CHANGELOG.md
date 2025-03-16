@@ -2,6 +2,13 @@
 
 
 
+## v3.1.8 (2025-03-16)
+
+### Fix
+
+* fix: create MANIFEST.in ([`16aa09d`](https://github.com/Jc2k/pytest-docker-tools/commit/16aa09d5f4c93269722a64cc1d2ab55fd1fca977))
+
+
 ## v3.1.7 (2025-03-15)
 
 ### Fix
