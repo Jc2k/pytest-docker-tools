@@ -1,1 +1,1 @@
-include pytest_docker_tools/context/*/Dockerfile
+include pytest_docker_tools/contexts/*/Dockerfile
