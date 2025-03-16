@@ -2,6 +2,21 @@
 
 
 
+## v3.1.9 (2025-03-16)
+
+### Chore
+
+* chore: update Dockerfile ([`08c3cfc`](https://github.com/Jc2k/pytest-docker-tools/commit/08c3cfcc23b9fbd443817dc340ce4dc4d3588c48))
+
+### Fix
+
+* fix: pyproject.toml typo ([`3517840`](https://github.com/Jc2k/pytest-docker-tools/commit/351784036ac1ccaeb8def29054e1f56e186cae75))
+
+### Unknown
+
+* Fix: MANIFEST.in typo ([`c563e04`](https://github.com/Jc2k/pytest-docker-tools/commit/c563e04650d65eaba80a478eab7a973574d0dcfe))
+
+
 ## v3.1.8 (2025-03-16)
 
 ### Fix
