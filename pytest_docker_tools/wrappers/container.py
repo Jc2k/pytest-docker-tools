@@ -157,8 +157,8 @@ class Container:
             "Do not remove this container manually. It will be removed automatically by py.test after the test finishes."
         )
 
-    def logs(self):
-        return self._container.logs().decode("utf-8")
+    def logs(self, **kwargs):
+        return self._container.logs(**kwargs).decode("utf-8")
 
     def get_files(self, path):
         """
