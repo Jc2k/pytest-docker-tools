@@ -19,6 +19,11 @@ def container(request, docker_client, wrapper_class, **kwargs):
     try:
         wait_for_callable('Waiting for container to be ready', container.ready)
     except TimeoutError:
+        try:
+            logs = container.logs()
+            request.node.add_report_section("teardown", f"{container.name} logs", logs)
+        except Exception as e:
+            request.node.add_report_section("teardown", f"{container.name} logs", f"Logs not available because: {e}")
         raise ContainerNotReady(container, 'Timeout while waiting for container to be ready')
 
     return container
