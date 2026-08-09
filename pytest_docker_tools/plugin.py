@@ -31,6 +31,8 @@ def pytest_runtest_makereport(item, call):
     if "request" not in item.funcargs:
         return
 
+    container_tail = item.funcargs["request"].config.option.container_tail
+    container_tail = int(container_tail) if container_tail.isdigit() else container_tail
     for name, fixturedef in item.funcargs["request"]._fixture_defs.items():
         if not hasattr(fixturedef, "cached_result") or not fixturedef.cached_result:
             continue
@@ -39,7 +41,7 @@ def pytest_runtest_makereport(item, call):
             rep.sections.append(
                 (
                     name + ": " + fixture.name,
-                    fixture.logs(),
+                    fixture.logs(tail=container_tail),
                 )
             )
 
@@ -52,4 +54,10 @@ def pytest_addoption(parser):
         dest="reuse_containers",
         help="reuse existing containers instead of always creating new ones. Requires the 'name' attribute to be set"
         "on container definition",
+    )
+    group.addoption(
+        "--container-tail",
+        dest="container_tail",
+        default="all",
+        help="limit logs of containers",
     )
